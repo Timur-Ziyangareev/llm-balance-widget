@@ -20,7 +20,7 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 ## Install
 
 1. Copy this folder to `<DSH profile>/node_modules/@local/llm-balance-widget`.
-2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.7.6"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
+2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.7.7"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
 3. Restart DeepSeek Harness.
 
 The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
@@ -75,7 +75,7 @@ The test loads `client.js` in a sandbox and checks the response parsers against 
 ### Установка
 
 1. Скопируй папку в `<профиль DSH>/node_modules/@local/llm-balance-widget`.
-2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.7.6"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
+2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.7.7"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
 3. Перезапусти DeepSeek Harness.
 
 Профиль на Windows лежит в `%USERPROFILE%\.dsh\profiles\desktop`.

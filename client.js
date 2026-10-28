@@ -480,6 +480,7 @@ window.__ModuleLoader__.load({
       sumItem: { whiteSpace: 'nowrap', cursor: 'copy' },
       smallRow: { display: 'flex', alignItems: 'center', gap: 6 },
       smallAmount: { fontSize: 14, fontWeight: 700 },
+      smallText: { fontSize: 12, fontWeight: 600, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       smallTokens: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       gearBtn: {
         width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
@@ -971,8 +972,11 @@ window.__ModuleLoader__.load({
       if (collapsed) {
         children.push(h('div', { key: 'small', style: styles.smallRow }, [
           h('span', { key: 'l', style: styles.balanceLabel }, text.balance),
-          h('span', { key: 'a', style: styles.smallAmount },
-            balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
+          h('span', {
+            key: 'a',
+            style: balance.status === 'ready' ? styles.smallAmount : styles.smallText,
+            onClick: function () { if (balance.status !== 'ready') setSettingsOpen(true); },
+          }, balance.status === 'ready' ? fmtMoney(shown, currency, lang) : amountText),
           tokensText != null ? h('span', { key: 'k', style: styles.smallTokens },
             '≈ ' + tokensText + ' ' + text.tokens) : null,
           h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
