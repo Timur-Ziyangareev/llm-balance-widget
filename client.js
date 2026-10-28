@@ -178,7 +178,7 @@ window.__ModuleLoader__.load({
       if (value == null || !isFinite(value)) return '—';
       try {
         return new Intl.NumberFormat(locale(lang), {
-          style: 'currency', currency: code,
+          style: 'currency', currency: code, currencyDisplay: 'narrowSymbol',
           minimumFractionDigits: 2, maximumFractionDigits: 2
         }).format(value);
       } catch (e) { return value.toFixed(2) + ' ' + code; }
@@ -494,7 +494,10 @@ window.__ModuleLoader__.load({
         color: 'var(--dsw-alias-label-primary, inherit)',
         fontFamily: 'inherit', fontSize: 12, textAlign: 'right', outline: 'none', cursor: 'text',
       },
-      result: { marginLeft: 'auto', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap', cursor: 'copy' },
+      result: {
+        marginLeft: 'auto', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
+        cursor: 'copy', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+      },
       sub: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', paddingLeft: 62 },
       divider: { borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))', margin: '4px 0 2px' },
       rubList: {
@@ -811,6 +814,7 @@ window.__ModuleLoader__.load({
       var nativeCode = balance.data ? balance.data.currency : null;
       var nativeAmount = balance.data ? balance.data.amount : null;
       var tokens = provider === 'deepseek' && usd != null ? usd / DEEPSEEK_PRICE * 1e6 : null;
+      var tokensText = fmtTokens(tokens, lang);
 
       var amountText;
       if (balance.status === 'ready') amountText = fmtMoney(shown, currency, lang);
@@ -870,7 +874,7 @@ window.__ModuleLoader__.load({
           h('span', { key: 'l', style: styles.balanceLabel }, text.balance),
           h('span', { key: 'a', style: styles.smallAmount },
             balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
-          tokens != null ? h('span', { key: 'k', style: styles.smallTokens }, '≈' + fmtTokens(tokens, lang)) : null,
+          tokensText != null ? h('span', { key: 'k', style: styles.smallTokens }, '≈' + tokensText) : null,
           h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
           gearButton(true),
           collapseButton(true),
@@ -936,8 +940,8 @@ window.__ModuleLoader__.load({
             title: balance.status === 'ready' ? text.refresh : text.addKey,
             onClick: function () { if (balance.status !== 'ready') setSettingsOpen(true); },
           }, amountText),
-          tokens != null ? h('span', { key: 'k', style: styles.tokens, title: text.tokensHint },
-            '≈ ' + fmtTokens(tokens, lang) + ' ' + text.tokens) : null,
+          tokensText != null ? h('span', { key: 'k', style: styles.tokens, title: text.tokensHint },
+            '≈ ' + tokensText + ' ' + text.tokens) : null,
           h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
           gearButton(false),
           collapseButton(false),
@@ -1038,9 +1042,13 @@ window.__ModuleLoader__.load({
         widgetStyle.left = pos.left + 'px';
         widgetStyle.top = pos.top + 'px';
       }
-      widgetStyle.minWidth = collapsed ? '330px' : '280px';
+      // A fixed width keeps the widget from resizing when the currency changes:
+      // "¥" and "$" have different widths, and the balance used to jump.
+      widgetStyle.width = '330px';
+      widgetStyle.minWidth = '330px';
+      widgetStyle.maxWidth = '330px';
+      widgetStyle.boxSizing = 'border-box';
       if (collapsed) {
-        widgetStyle.boxSizing = 'border-box';
         widgetStyle.justifyContent = 'center';
         widgetStyle.padding = '10px 18px';
       }
