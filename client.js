@@ -658,13 +658,42 @@ window.__ModuleLoader__.load({
         setPos(next);
       }
 
+      /** Top edge of the chat composer relative to the overlay container, if found. */
+      function composerTop(container) {
+        try {
+          if (!container || !document) return null;
+          var containerRect = container.getBoundingClientRect();
+          var nodes = document.querySelectorAll('textarea, [contenteditable="true"], [role="textbox"]');
+          var best = null;
+          for (var i = 0; i < nodes.length; i++) {
+            var rect = nodes[i].getBoundingClientRect();
+            if (rect.width < 300 || rect.height < 18 || rect.height > 220) continue;
+            var top = rect.top;
+            var node = nodes[i];
+            for (var depth = 0; depth < 6 && node; depth++) {
+              var parentRect = node.getBoundingClientRect();
+              if (parentRect.height > rect.height + 160) break;
+              if (parentRect.top < top) top = parentRect.top;
+              node = node.parentElement;
+            }
+            var relative = top - containerRect.top;
+            if (best == null || relative < best) best = relative;
+          }
+          return best;
+        } catch (e) { return null; }
+      }
+
       function measureHome() {
         var el = widgetRef.current;
         var container = el && (el.offsetParent || el.parentElement);
         if (!el || !container) return;
+        // Keep the widget above the chat composer instead of over it.
+        var limit = container.clientHeight - 30;
+        var composer = composerTop(container);
+        if (composer != null && composer > 0 && composer - 8 < limit) limit = composer - 8;
         var nextHome = {
           left: container.clientWidth - el.offsetWidth - HOME_MARGIN,
-          top: Math.max(HOME_MARGIN, container.clientHeight - el.offsetHeight - 30),
+          top: Math.max(HOME_MARGIN, Math.min(container.clientHeight - el.offsetHeight - 30, limit - el.offsetHeight)),
           width: el.offsetWidth,
           height: el.offsetHeight
         };
