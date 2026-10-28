@@ -1224,9 +1224,9 @@ window.__ModuleLoader__.load({
         widgetStyle.maxWidth = '400px';
         if (settingsOpen) {
           // Settings open, rates hidden: keep the panel compact.
-          widgetStyle.width = '300px';
-          widgetStyle.minWidth = '300px';
-          widgetStyle.maxWidth = '300px';
+          widgetStyle.width = '315px';
+          widgetStyle.minWidth = '315px';
+          widgetStyle.maxWidth = '315px';
         }
         widgetStyle.justifyContent = 'center';
         widgetStyle.padding = '8px 16px';
