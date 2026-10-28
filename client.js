@@ -49,6 +49,7 @@ window.__ModuleLoader__.load({
     var TEXT = {
       en: {
         balance: 'Balance',
+        convert: 'Convert',
         settings: 'Settings',
         provider: 'Provider',
         apiKey: 'API key',
@@ -81,6 +82,7 @@ window.__ModuleLoader__.load({
       },
       ru: {
         balance: 'Баланс',
+        convert: 'Конвертация',
         settings: 'Настройки',
         provider: 'Провайдер',
         apiKey: 'API-ключ',
@@ -113,6 +115,7 @@ window.__ModuleLoader__.load({
       },
       zh: {
         balance: '余额',
+        convert: '换算',
         settings: '设置',
         provider: '提供商',
         apiKey: 'API 密钥',
@@ -457,6 +460,24 @@ window.__ModuleLoader__.load({
       bigRow: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
       balanceRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 },
       balanceLabel: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      sumBox: {
+        display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6, paddingTop: 6,
+        borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))',
+      },
+      sumRow: { display: 'flex', alignItems: 'center', gap: 6 },
+      sumInput: {
+        width: 92, boxSizing: 'border-box', padding: '3px 7px', borderRadius: 6,
+        border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.4))',
+        background: 'var(--dsw-alias-bg-base, transparent)',
+        color: 'var(--dsw-alias-label-primary, inherit)',
+        fontFamily: 'inherit', fontSize: 12, textAlign: 'right', outline: 'none', cursor: 'text',
+      },
+      sumCode: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      sumList: {
+        display: 'flex', flexWrap: 'wrap', gap: '2px 10px',
+        fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)',
+      },
+      sumItem: { whiteSpace: 'nowrap', cursor: 'copy' },
       smallRow: { display: 'flex', alignItems: 'center', gap: 6 },
       smallAmount: { fontSize: 14, fontWeight: 700 },
       smallTokens: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
@@ -567,6 +588,23 @@ window.__ModuleLoader__.load({
         return next;
       });
       var inputs = inputsRef[0], setInputs = inputsRef[1];
+
+      // Amount for the "convert into everything" block, remembered per currency.
+      var sumsRef = React.useState(function () {
+        var saved = readJson('llm-balance.sums') || {};
+        var defaults = { RUB: '10000', USD: '100', CNY: '100' };
+        var next = {};
+        for (var code in defaults) {
+          var value = saved ? saved[code] : null;
+          next[code] = (typeof value === 'string' || typeof value === 'number') ? String(value) : defaults[code];
+        }
+        return next;
+      });
+      var sums = sumsRef[0], setSums = sumsRef[1];
+
+      React.useEffect(function () {
+        storageSet('llm-balance.sums', JSON.stringify(sums));
+      }, [sums]);
 
       var copiedRef = React.useState(null);
       var copied = copiedRef[0], setCopied = copiedRef[1];
@@ -755,6 +793,14 @@ window.__ModuleLoader__.load({
 
       function setInput(code, value) {
         setInputs(function (prev) {
+          var next = {};
+          for (var key in prev) next[key] = prev[key];
+          next[code] = value;
+          return next;
+        });
+      }
+      function setSum(code, value) {
+        setSums(function (prev) {
           var next = {};
           for (var key in prev) next[key] = prev[key];
           next[code] = value;
@@ -963,6 +1009,44 @@ window.__ModuleLoader__.load({
           })(units[ci]);
         }
         children.push(h('div', { key: 'rates', style: styles.rateTable }, table));
+      }
+
+      if (!collapsed && rates) {
+        var sumValue = toNumber(sums[currency]);
+        var allUnits = CURRENCIES.concat([{ code: 'RUB', symbol: '₽', label: '₽ RUB', decimals: 2 }]);
+        var sumOut = [];
+        if (sumValue != null && sumValue > 0) {
+          for (var si = 0; si < allUnits.length; si++) {
+            (function (cur) {
+              if (cur.code === currency) return;
+              var nativeRate = bankRate(cur.code);
+              var multiplier = nativeRate != null ? nativeRate : factorTo(cur.code, currency, rates);
+              if (multiplier == null || multiplier === 0) return;
+              var converted = sumValue / multiplier;
+              sumOut.push(h('span', {
+                key: 'sum-' + cur.code, style: styles.sumItem, title: text.copy,
+                onClick: function () { if (copyInteger(converted)) flashCopied('sum-' + cur.code); },
+              }, cur.symbol + ' ' + fmtAmount(converted, cur.decimals, lang),
+                copied === 'sum-' + cur.code ? h('span', { key: 'ok', style: styles.saved }, '✓') : null));
+            })(allUnits[si]);
+          }
+        }
+        children.push(h('div', { key: 'sum', style: styles.sumBox }, [
+          h('div', { key: 'row', style: styles.sumRow }, [
+            h('span', { key: 'l', style: styles.balanceLabel }, text.convert),
+            h('input', {
+              key: 'in', type: 'text', inputMode: 'decimal',
+              value: sums[currency],
+              style: styles.sumInput,
+              onPointerDown: function (e) { e.stopPropagation(); },
+              onChange: function (e) { setSum(currency, e.target.value); },
+              'aria-label': text.convert,
+            }),
+            h('span', { key: 'c', style: styles.sumCode }, currency),
+          ]),
+          h('div', { key: 'list', style: styles.sumList },
+            sumOut.length ? sumOut : h('span', { key: 'n', style: styles.sub }, '—')),
+        ]));
       }
 
       if (!collapsed) {
