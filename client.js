@@ -1222,6 +1222,12 @@ window.__ModuleLoader__.load({
         widgetStyle.width = 'auto';
         widgetStyle.minWidth = '330px';
         widgetStyle.maxWidth = '400px';
+        if (settingsOpen) {
+          // Settings open, rates hidden: keep the panel compact.
+          widgetStyle.width = '300px';
+          widgetStyle.minWidth = '300px';
+          widgetStyle.maxWidth = '300px';
+        }
         widgetStyle.justifyContent = 'center';
         widgetStyle.padding = '8px 16px';
       } else {
