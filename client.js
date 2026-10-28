@@ -639,6 +639,19 @@ window.__ModuleLoader__.load({
       var copiedRef = React.useState(null);
       var copied = copiedRef[0], setCopied = copiedRef[1];
 
+      var sumListRef = React.useRef(null);
+      /** Shrink the conversion line until it fits, but never below 9px. */
+      function fitSumList() {
+        var el = sumListRef.current;
+        if (!el) return;
+        var size = 10;
+        el.style.fontSize = size + 'px';
+        while (size > 9 && el.scrollWidth > el.clientWidth + 1) {
+          size -= 0.5;
+          el.style.fontSize = size + 'px';
+        }
+      }
+
       var balanceRef = React.useState({ status: 'idle' });
       var balance = balanceRef[0], setBalance = balanceRef[1];
 
@@ -746,6 +759,10 @@ window.__ModuleLoader__.load({
       React.useEffect(function () { storageSet(K.provider, provider); }, [provider]);
       React.useEffect(function () { storageSet(K.collapsed, collapsed ? '1' : '0'); }, [collapsed]);
       React.useEffect(function () { storageSet(K.inputs, JSON.stringify(inputs)); }, [inputs]);
+
+      React.useEffect(function () {
+        fitSumList();
+      }, [sums, currency, rates, lang, collapsed, settingsOpen]);
 
       React.useEffect(function () {
         // Drop the pre-1.3 cache shape: it only carried USD and CNY.
@@ -1110,7 +1127,7 @@ window.__ModuleLoader__.load({
             }),
             h('span', { key: 'c', style: styles.sumCode }, currency),
           ]),
-          h('div', { key: 'list', style: styles.sumList },
+          h('div', { key: 'list', ref: sumListRef, style: styles.sumList },
             sumOut.length ? sumOut : h('span', { key: 'n', style: styles.sub }, '—')),
         ]));
       }
