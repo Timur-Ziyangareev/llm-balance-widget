@@ -73,7 +73,8 @@ window.__ModuleLoader__.load({
         enterRub: 'enter an amount in RUB',
         getKey: 'get a key',
         keySaved: 'key saved',
-        refresh: 'refresh'
+        refresh: 'refresh',
+        native: 'account currency'
       },
       ru: {
         balance: 'Баланс',
@@ -102,12 +103,43 @@ window.__ModuleLoader__.load({
         enterRub: 'введите сумму в рублях',
         getKey: 'получить ключ',
         keySaved: 'ключ сохранён',
-        refresh: 'обновить'
+        refresh: 'обновить',
+        native: 'валюта счёта'
+      },
+      zh: {
+        balance: '余额',
+        settings: '设置',
+        provider: '提供商',
+        apiKey: 'API 密钥',
+        language: '语言',
+        currency: '货币',
+        save: '保存',
+        clear: '清除',
+        addKey: '添加 API 密钥',
+        noKey: '无密钥',
+        unauthorized: '密钥被拒绝',
+        error: '不可用',
+        empty: '暂无余额数据',
+        updated: '更新于',
+        tokens: 'tokens',
+        tokensHint: '按每百万输入 tokens $' + DEEPSEEK_PRICE + ' 估算',
+        collapse: '收起',
+        expand: '展开',
+        loading: '加载中…',
+        cbr: '央行',
+        keyPlaceholder: '粘贴密钥',
+        keyFormat: '这不像密钥：DeepSeek 和 OpenRouter 的密钥以 “sk-” 开头。',
+        copy: '点击复制',
+        enterRub: '输入金额',
+        getKey: '获取密钥',
+        keySaved: '密钥已保存',
+        refresh: '刷新',
+        native: '账户货币'
       }
     };
 
-    function t(lang) { return TEXT[lang === 'ru' ? 'ru' : 'en']; }
-    function locale(lang) { return lang === 'ru' ? 'ru-RU' : 'en-US'; }
+    function t(lang) { return TEXT[lang === 'ru' ? 'ru' : lang === 'zh' ? 'zh' : 'en']; }
+    function locale(lang) { return lang === 'ru' ? 'ru-RU' : lang === 'zh' ? 'zh-CN' : 'en-US'; }
 
     function absUrl(path) {
       try {
@@ -291,6 +323,31 @@ window.__ModuleLoader__.load({
       return null;
     }
 
+    /** RUB per one unit of the target currency; RUB is the base. */
+    function rubPerTarget(target, rates) {
+      if (!rates) return null;
+      if (target === 'RUB') return 1;
+      var value = rates[target.toLowerCase()];
+      return typeof value === 'number' && isFinite(value) ? value : null;
+    }
+
+    /** Multiplier that turns an amount in `code` into the target currency. */
+    function factorTo(code, target, rates) {
+      var perTarget = rubPerTarget(target, rates);
+      if (perTarget == null) return null;
+      var perCode = code === 'RUB' ? 1 : rubPerTarget(code, rates);
+      if (perCode == null) return null;
+      return perCode / perTarget;
+    }
+
+    /** Convert a USD amount into the display currency. */
+    function fromUsd(usd, target, rates) {
+      if (usd == null || !isFinite(usd)) return null;
+      var perTarget = rubPerTarget(target, rates);
+      if (perTarget == null || !rates.usd) return null;
+      return usd * rates.usd / perTarget;
+    }
+
     async function requestJson(url, key) {
       var headers = { accept: 'application/json' };
       if (key) headers.authorization = 'Bearer ' + key;
@@ -434,7 +491,7 @@ window.__ModuleLoader__.load({
       var langRef = React.useState(function () { return readChoice(K.lang, ['en', 'ru'], 'en'); });
       var lang = langRef[0], setLang = langRef[1];
 
-      var currencyRef = React.useState(function () { return readChoice(K.currency, ['USD', 'RUB'], 'USD'); });
+      var currencyRef = React.useState(function () { return readChoice(K.currency, ['USD', 'RUB', 'CNY'], 'USD'); });
       var currency = currencyRef[0], setCurrency = currencyRef[1];
 
       var providerRef = React.useState(function () { return readChoice(K.provider, ['deepseek', 'openrouter'], 'deepseek'); });
@@ -708,10 +765,9 @@ window.__ModuleLoader__.load({
       if (balance.status === 'ready' && balance.data) {
         usd = toUsd(balance.data, rates);
       }
-      var rub = usd != null && rates && rates.usd ? usd * rates.usd : null;
-      var shown = currency === 'RUB' ? rub : usd;
-      var other = currency === 'RUB' ? usd : rub;
-      var otherCode = currency === 'RUB' ? 'USD' : 'RUB';
+      var shown = fromUsd(usd, currency, rates);
+      var nativeCode = balance.data ? balance.data.currency : null;
+      var nativeAmount = balance.data ? balance.data.amount : null;
       var tokens = provider === 'deepseek' && usd != null ? usd / DEEPSEEK_PRICE * 1e6 : null;
 
       var amountText;
@@ -743,8 +799,59 @@ window.__ModuleLoader__.load({
         ]),
       ]));
 
-      if (!collapsed) {
+      if (collapsed) {
+        children.push(h('div', { key: 'small', style: styles.bigRow }, [
+          h('span', { key: 'a', style: { fontSize: 14, fontWeight: 700 } },
+            balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
+          tokens != null ? h('span', { key: 'k', style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' } },
+            '≈' + fmtTokens(tokens, lang)) : null,
+        ]));
+      } else {
         children.push(h('div', { key: 'meta', style: styles.meta }, metaText));
+      }
+
+      if (!collapsed && rates) {
+        var table = [];
+        var units = CURRENCIES.concat([{ code: 'RUB', symbol: '₽', label: '₽ RUB', decimals: 2 }]);
+        for (var ci = 0; ci < units.length; ci++) {
+          (function (cur) {
+            var multiplier = factorTo(cur.code, currency, rates);
+            var amount = toNumber(inputs[cur.code]);
+            var value = multiplier != null && amount != null ? amount * multiplier : null;
+            var move = cur.code === 'RUB' ? null : (rates.change ? rates.change[cur.code.toLowerCase()] : null);
+            table.push(h('div', { key: 'row-' + cur.code, style: styles.row }, [
+              h('span', { key: 'c', style: styles.code }, cur.label),
+              h('input', {
+                key: 'in', type: 'text', inputMode: 'decimal',
+                value: inputs[cur.code],
+                style: styles.input,
+                onPointerDown: function (e) { e.stopPropagation(); },
+                onChange: function (e) { setInput(cur.code, e.target.value); },
+                'aria-label': cur.label,
+              }),
+              h('span', {
+                key: 'r', style: styles.result, title: text.copy,
+                onClick: function () { if (copyInteger(value)) flashCopied('r-' + cur.code); },
+              }, fmtMoney(value, currency, lang),
+                copied === 'r-' + cur.code ? h('span', { key: 'ok', style: styles.saved }, '✓') : null),
+            ]));
+            if (cur.code !== currency) {
+              table.push(h('div', { key: 'sub-' + cur.code, style: styles.sub }, [
+                multiplier != null ? '1 ' + cur.symbol + ' = ' + fmtMoney(multiplier, currency, lang) : '—',
+                move != null && Math.abs(move) > 0.0005
+                  ? h('span', {
+                    key: 'chg',
+                    style: { marginLeft: 6, color: move > 0 ? '#2e9e5b' : '#d9534f' },
+                  }, (move > 0 ? '↑ +' : '↓ −') + Math.abs(move * 100).toFixed(2) + '%')
+                  : null,
+              ]));
+            }
+          })(units[ci]);
+        }
+        children.push(h('div', { key: 'rates', style: styles.rateTable }, table));
+      }
+
+      if (!collapsed) {
         children.push(h('div', {
           key: 'big',
           style: styles.bigRow,
@@ -759,86 +866,10 @@ window.__ModuleLoader__.load({
           tokens != null ? h('span', { key: 'k', style: styles.tokens, title: text.tokensHint },
             '≈ ' + fmtTokens(tokens, lang) + ' ' + text.tokens) : null,
         ]));
-        if (balance.status === 'ready' && other != null && otherCode !== currency) {
-          children.push(h('div', { key: 'sec', style: styles.secondary }, fmtMoney(other, otherCode, lang)));
+        if (balance.status === 'ready' && nativeCode && nativeAmount != null && nativeCode !== currency) {
+          children.push(h('div', { key: 'native', style: styles.secondary },
+            text.native + ': ' + fmtMoney(nativeAmount, nativeCode, lang)));
         }
-      } else {
-        children.push(h('div', { key: 'small', style: styles.bigRow }, [
-          h('span', { key: 'a', style: { fontSize: 14, fontWeight: 700 } },
-            balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
-          tokens != null ? h('span', { key: 'k', style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' } },
-            '≈' + fmtTokens(tokens, lang)) : null,
-        ]));
-      }
-
-      if (!collapsed && rates) {
-        var table = [];
-        for (var ci = 0; ci < CURRENCIES.length; ci++) {
-          (function (cur) {
-            var rateKey = cur.code.toLowerCase();
-            var rubRate = rates[rateKey];
-            var move = rates.change ? rates.change[rateKey] : null;
-            var amount = toNumber(inputs[cur.code]);
-            var rubValue = rubRate && amount != null ? amount * rubRate : null;
-            table.push(h('div', { key: 'row-' + cur.code, style: styles.row }, [
-              h('span', { key: 'c', style: styles.code }, cur.label),
-              h('input', {
-                key: 'in', type: 'text', inputMode: 'decimal',
-                value: inputs[cur.code],
-                style: styles.input,
-                onPointerDown: function (e) { e.stopPropagation(); },
-                onChange: function (e) { setInput(cur.code, e.target.value); },
-                'aria-label': cur.label,
-              }),
-              h('span', {
-                key: 'r', style: styles.result, title: text.copy,
-                onClick: function () { if (copyInteger(rubValue)) flashCopied('r-' + cur.code); },
-              }, fmtMoney(rubValue, 'RUB', lang),
-                copied === 'r-' + cur.code ? h('span', { key: 'ok', style: styles.saved }, '✓') : null),
-            ]));
-            table.push(h('div', { key: 'sub-' + cur.code, style: styles.sub }, [
-              rubRate != null ? '1 ' + cur.symbol + ' = ' + fmtMoney(rubRate, 'RUB', lang) : '—',
-              move != null && Math.abs(move) > 0.0005
-                ? h('span', {
-                  key: 'chg',
-                  style: { marginLeft: 6, color: move > 0 ? '#2e9e5b' : '#d9534f' },
-                }, (move > 0 ? '↑ +' : '↓ −') + Math.abs(move * 100).toFixed(2) + '%')
-                : null,
-            ]));
-          })(CURRENCIES[ci]);
-        }
-        children.push(h('div', { key: 'rates', style: styles.rateTable }, table));
-        children.push(h('div', { key: 'div1', style: styles.divider }));
-
-        var rubNum = toNumber(inputs.RUB);
-        var rubItems = [];
-        if (rubNum != null && rubNum > 0) {
-          for (var ri = 0; ri < CURRENCIES.length; ri++) {
-            (function (cur) {
-              var rate = rates[cur.code.toLowerCase()];
-              if (!rate) return;
-              var value = rubNum / rate;
-              rubItems.push(h('span', {
-                key: 'rub-' + cur.code, style: styles.rubItem, title: text.copy,
-                onClick: function () { if (copyInteger(value)) flashCopied('rub-' + cur.code); },
-              }, cur.symbol + ' ' + fmtAmount(value, cur.decimals, lang),
-                copied === 'rub-' + cur.code ? h('span', { key: 'ok', style: styles.saved }, '✓') : null));
-            })(CURRENCIES[ri]);
-          }
-        }
-        children.push(h('div', { key: 'rub', style: styles.row }, [
-          h('span', { key: 'c', style: styles.code }, '₽ RUB'),
-          h('input', {
-            key: 'in', type: 'text', inputMode: 'decimal',
-            value: inputs.RUB,
-            style: styles.input,
-            onPointerDown: function (e) { e.stopPropagation(); },
-            onChange: function (e) { setInput('RUB', e.target.value); },
-            'aria-label': 'RUB',
-          }),
-        ]));
-        children.push(h('div', { key: 'rubsub', style: styles.rubList },
-          rubItems.length ? rubItems : h('span', { key: 'none', style: styles.sub }, text.enterRub)));
       }
 
       if (settingsOpen) {
@@ -897,6 +928,10 @@ window.__ModuleLoader__.load({
                 key: 'ru', type: 'button', style: lang === 'ru' ? styles.smallBtnActive : styles.smallBtn,
                 onClick: function () { setLang('ru'); },
               }, 'RU'),
+              h('button', {
+                key: 'zh', type: 'button', style: lang === 'zh' ? styles.smallBtnActive : styles.smallBtn,
+                onClick: function () { setLang('zh'); },
+              }, '中文'),
             ]),
           ]),
           h('div', { key: 'cur', style: styles.field }, [
@@ -910,6 +945,10 @@ window.__ModuleLoader__.load({
                 key: 'rub', type: 'button', style: currency === 'RUB' ? styles.smallBtnActive : styles.smallBtn,
                 onClick: function () { setCurrency('RUB'); },
               }, '₽ RUB'),
+              h('button', {
+                key: 'cny', type: 'button', style: currency === 'CNY' ? styles.smallBtnActive : styles.smallBtn,
+                onClick: function () { setCurrency('CNY'); },
+              }, '¥ CNY'),
             ]),
           ]),
         ]));
@@ -971,6 +1010,8 @@ window.__ModuleLoader__.load({
         parseOpenRouter: parseOpenRouter,
         toUsd: toUsd,
         hasRates: hasRates,
+        factorTo: factorTo,
+        fromUsd: fromUsd,
         fmtTokens: fmtTokens
       },
       apply: function (ctx) {

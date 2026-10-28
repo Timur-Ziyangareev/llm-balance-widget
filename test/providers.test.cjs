@@ -14,7 +14,7 @@ assert(captured, 'client.js did not call __ModuleLoader__.load');
 
 const mod = captured.factory((name) => (name === 'react' ? { createElement() {} } : null));
 assert(mod._test, 'test hooks missing');
-const { parseRates, parseDeepSeek, parseOpenRouter, toUsd, hasRates, fmtTokens } = mod._test;
+const { parseRates, parseDeepSeek, parseOpenRouter, toUsd, hasRates, factorTo, fromUsd, fmtTokens } = mod._test;
 
 // CBR payload: Nominal is 10 for CNY and 100 for KZT.
 const rates = parseRates({
@@ -42,6 +42,16 @@ assert.strictEqual(rates.date, '2026-10-28T11:30:00+03:00');
 assert.strictEqual(hasRates(rates), true);
 assert.strictEqual(hasRates({ usd: 92.5, cny: 12.98, date: rates.date }), false);
 assert.strictEqual(hasRates(null), false);
+
+// Converter target: any supported currency, RUB included.
+assert.strictEqual(factorTo('USD', 'RUB', rates), 92.5);
+assert.strictEqual(factorTo('USD', 'USD', rates), 1);
+assert.strictEqual(factorTo('USD', 'CNY', rates).toFixed(6), (92.5 / 12.98).toFixed(6));
+assert.strictEqual(factorTo('RUB', 'USD', rates).toFixed(6), (1 / 92.5).toFixed(6));
+assert.strictEqual(factorTo('CNY', 'USD', rates).toFixed(6), (12.98 / 92.5).toFixed(6));
+assert.strictEqual(fromUsd(10, 'USD', rates), 10);
+assert.strictEqual(fromUsd(10, 'RUB', rates), 925);
+assert.strictEqual(fromUsd(10, 'CNY', rates).toFixed(6), (10 * 92.5 / 12.98).toFixed(6));
 
 // DeepSeek: USD entry wins over CNY.
 const ds = parseDeepSeek({
