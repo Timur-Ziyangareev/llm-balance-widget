@@ -392,8 +392,8 @@ window.__ModuleLoader__.load({
     }
 
     /** Decorative trend icon: bars with an arrow running along them. */
-    function trendIcon(up, label) {
-      var color = up ? '#2e9e5b' : '#d9534f';
+    function trendIcon(up, label, colorOverride) {
+      var color = colorOverride || (up ? '#2e9e5b' : '#d9534f');
       var heights = up ? [3, 6, 9, 12] : [12, 9, 6, 3];
       var parts = [];
       for (var i = 0; i < heights.length; i++) {
@@ -896,13 +896,16 @@ window.__ModuleLoader__.load({
           style.border = '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.45))';
           style.borderRadius = 9;
         }
+        style.display = 'flex';
+        style.alignItems = 'center';
+        style.justifyContent = 'center';
         return h('button', {
           key: 'collapse', type: 'button', style: style,
           title: collapsed ? text.expand : text.collapse,
           'aria-label': collapsed ? text.expand : text.collapse,
           onPointerDown: function (e) { e.stopPropagation(); },
           onClick: function (e) { e.stopPropagation(); setCollapsed(!collapsed); },
-        }, collapsed ? '+' : '−');
+        }, collapsed ? trendIcon(true, '', 'currentColor') : '−');
       }
 
       if (collapsed) {
@@ -954,8 +957,8 @@ window.__ModuleLoader__.load({
               move != null && Math.abs(move) > 0.0005
                 ? h('span', {
                   key: 'chg',
-                  style: { marginLeft: 6, display: 'inline-flex', alignItems: 'center' },
-                }, trendIcon(move > 0, (move > 0 ? '+' : '−') + Math.abs(move * 100).toFixed(2) + '%'))
+                  style: { marginLeft: 6, color: move > 0 ? '#2e9e5b' : '#d9534f' },
+                }, (move > 0 ? '↑ +' : '↓ −') + Math.abs(move * 100).toFixed(2) + '%')
                 : null,
             ]));
           })(units[ci]);
