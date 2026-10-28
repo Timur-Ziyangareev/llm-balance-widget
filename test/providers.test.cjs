@@ -20,12 +20,16 @@ const { parseRates, parseDeepSeek, parseOpenRouter, toUsd, fmtTokens } = mod._te
 const rates = parseRates({
   Date: '2026-10-28T11:30:00+03:00',
   Valute: {
-    USD: { Nominal: 1, Value: 92.5 },
-    CNY: { Nominal: 10, Value: 129.8 },
+    USD: { Nominal: 1, Value: 92.5, Previous: 92.0 },
+    EUR: { Nominal: 1, Value: 100.9, Previous: 101.9 },
+    CNY: { Nominal: 10, Value: 129.8, Previous: 129.3 },
   },
 });
 assert.strictEqual(rates.usd, 92.5);
 assert.strictEqual(rates.cny, 12.98);
+assert.strictEqual(rates.eur, 100.9);
+assert.strictEqual(rates.change.usd.toFixed(6), (0.5 / 92.0).toFixed(6));
+assert.strictEqual(rates.change.eur.toFixed(6), (-1.0 / 101.9).toFixed(6));
 assert.strictEqual(rates.date, '2026-10-28T11:30:00+03:00');
 
 // DeepSeek: USD entry wins over CNY.

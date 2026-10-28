@@ -24,6 +24,7 @@ window.__ModuleLoader__.load({
       collapsed: 'llm-balance.collapsed',
       rates: 'llm-balance.rates',
       ratesAt: 'llm-balance.ratesAt',
+      rub: 'llm-balance.rub',
       keyPrefix: 'llm-balance.key.'
     };
 
@@ -143,8 +144,19 @@ window.__ModuleLoader__.load({
         return new Date(ts).toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' });
       } catch (e) { return ''; }
     }
+    function fmtNum(value, lang) {
+      if (value == null || !isFinite(value)) return '—';
+      var abs = Math.abs(value);
+      var digits = abs >= 1000 ? 0 : abs >= 10 ? 1 : 2;
+      try {
+        return new Intl.NumberFormat(locale(lang), {
+          minimumFractionDigits: digits, maximumFractionDigits: digits
+        }).format(value);
+      } catch (e) { return value.toFixed(digits); }
+    }
+    function fmtRate(value, lang) { return fmtNum(value, lang) + ' ₽'; }
 
-    /** Parse CBR daily rates into RUB per unit for USD and CNY. */
+    /** Parse CBR daily rates into RUB per unit plus the daily move. */
     function parseRates(body) {
       var valute = body && body.Valute;
       if (!valute) return null;
@@ -153,10 +165,22 @@ window.__ModuleLoader__.load({
         if (!entry || !entry.Nominal) return null;
         return entry.Value / entry.Nominal;
       }
+      function changeOf(code) {
+        var entry = valute[code];
+        if (!entry || !entry.Nominal || entry.Previous == null) return null;
+        var now = entry.Value / entry.Nominal;
+        var prev = entry.Previous / entry.Nominal;
+        return prev ? (now - prev) / prev : null;
+      }
       var usd = rubPer('USD');
-      var cny = rubPer('CNY');
       if (usd == null) return null;
-      return { usd: usd, cny: cny, date: body.Date || null };
+      return {
+        usd: usd,
+        eur: rubPer('EUR'),
+        cny: rubPer('CNY'),
+        change: { usd: changeOf('USD'), eur: changeOf('EUR'), cny: changeOf('CNY') },
+        date: body.Date || null
+      };
     }
 
     /** DeepSeek: pick the balance entry in USD, falling back to CNY. */
@@ -305,6 +329,22 @@ window.__ModuleLoader__.load({
       },
       saved: { fontSize: 10.5, color: '#2e9e5b' },
       error: { fontSize: 10.5, color: '#d9534f' },
+      rateList: {
+        display: 'flex', flexWrap: 'wrap', gap: '2px 10px', marginTop: 5, paddingTop: 6,
+        borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))',
+        fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)',
+      },
+      rateItem: { whiteSpace: 'nowrap' },
+      convRow: { display: 'flex', alignItems: 'center', gap: 6, marginTop: 3 },
+      convSign: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      convInput: {
+        width: 64, boxSizing: 'border-box', padding: '2px 6px', borderRadius: 6,
+        border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.4))',
+        background: 'var(--dsw-alias-bg-base, transparent)',
+        color: 'var(--dsw-alias-label-primary, inherit)',
+        fontFamily: 'inherit', fontSize: 11, textAlign: 'right', outline: 'none', cursor: 'text',
+      },
+      convOut: { fontSize: 11, color: 'var(--dsw-alias-label-primary, inherit)', whiteSpace: 'nowrap' },
     };
 
     function BalanceWidget() {
@@ -325,6 +365,9 @@ window.__ModuleLoader__.load({
 
       var keyErrorRef = React.useState(null);
       var keyError = keyErrorRef[0], setKeyError = keyErrorRef[1];
+
+      var rubRef = React.useState(function () { return storageGet(K.rub) || '10000'; });
+      var rubInput = rubRef[0], setRubInput = rubRef[1];
 
       var balanceRef = React.useState({ status: 'idle' });
       var balance = balanceRef[0], setBalance = balanceRef[1];
@@ -400,6 +443,7 @@ window.__ModuleLoader__.load({
       React.useEffect(function () { storageSet(K.currency, currency); }, [currency]);
       React.useEffect(function () { storageSet(K.provider, provider); }, [provider]);
       React.useEffect(function () { storageSet(K.collapsed, collapsed ? '1' : '0'); }, [collapsed]);
+      React.useEffect(function () { storageSet(K.rub, rubInput); }, [rubInput]);
 
       React.useEffect(function () {
         var cached = readJson(K.rates);
@@ -603,6 +647,48 @@ window.__ModuleLoader__.load({
             balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
           tokens != null ? h('span', { key: 'k', style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' } },
             '≈' + fmtTokens(tokens, lang)) : null,
+        ]));
+      }
+
+      if (!collapsed && rates) {
+        var pairs = [['USD', '$'], ['EUR', '€'], ['CNY', '¥']];
+        var rateItems = [];
+        for (var r = 0; r < pairs.length; r++) {
+          var code = pairs[r][0];
+          var symbol = pairs[r][1];
+          var value = code === 'USD' ? rates.usd : code === 'EUR' ? rates.eur : rates.cny;
+          if (value == null) continue;
+          var change = rates.change ? rates.change[code === 'USD' ? 'usd' : code === 'EUR' ? 'eur' : 'cny'] : null;
+          var arrow = '';
+          if (change != null && Math.abs(change) > 0.0005) {
+            arrow = (change > 0 ? ' ↑' : ' ↓') + Math.abs(change * 100).toFixed(1) + '%';
+          }
+          rateItems.push(h('span', {
+            key: code,
+            style: styles.rateItem,
+            title: '1 ' + code + ' = ' + fmtRate(value, lang) + (rates.date ? ' · ' + String(rates.date).slice(0, 10) : ''),
+          }, symbol + ' ' + fmtRate(value, lang) + arrow));
+        }
+        children.push(h('div', { key: 'rates', style: styles.rateList }, rateItems));
+
+        var rubNum = Number(String(rubInput).replace(',', '.').replace(/\s+/g, ''));
+        var conv = [];
+        if (isFinite(rubNum) && rubNum > 0) {
+          if (rates.usd) conv.push('$' + fmtNum(rubNum / rates.usd, lang));
+          if (rates.eur) conv.push('€' + fmtNum(rubNum / rates.eur, lang));
+          if (rates.cny) conv.push('¥' + fmtNum(rubNum / rates.cny, lang));
+        }
+        children.push(h('div', { key: 'conv', style: styles.convRow }, [
+          h('span', { key: 'l', style: styles.convSign }, '₽'),
+          h('input', {
+            key: 'in', type: 'text', inputMode: 'decimal',
+            value: rubInput,
+            style: styles.convInput,
+            onPointerDown: function (e) { e.stopPropagation(); },
+            onChange: function (e) { setRubInput(e.target.value); },
+            'aria-label': 'RUB amount',
+          }),
+          h('span', { key: 'out', style: styles.convOut }, conv.length ? '= ' + conv.join(' · ') : '—'),
         ]));
       }
 
