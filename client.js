@@ -613,8 +613,7 @@ window.__ModuleLoader__.load({
         if (!el || !container) return;
         var nextHome = {
           left: container.clientWidth - el.offsetWidth - HOME_MARGIN,
-          // The compact strip sits a bit higher so it does not hug the very bottom.
-          top: Math.max(HOME_MARGIN, container.clientHeight - el.offsetHeight - (collapsed ? 54 : 30)),
+          top: Math.max(HOME_MARGIN, container.clientHeight - el.offsetHeight - 30),
           width: el.offsetWidth,
           height: el.offsetHeight
         };
@@ -1081,20 +1080,15 @@ window.__ModuleLoader__.load({
         widgetStyle.left = pos.left + 'px';
         widgetStyle.top = pos.top + 'px';
       }
-      // Expanded view keeps a fixed width so the currency switch never resizes it.
-      // The compact strip hugs its content instead of stretching to that width.
-      if (collapsed) {
-        widgetStyle.width = 'auto';
-        widgetStyle.minWidth = '300px';
-        widgetStyle.maxWidth = '380px';
-        widgetStyle.justifyContent = 'center';
-        widgetStyle.padding = '8px 14px';
-      } else {
-        widgetStyle.width = '380px';
-        widgetStyle.minWidth = '380px';
-        widgetStyle.maxWidth = '380px';
-      }
+      // Fixed width: switching currency must not resize the widget.
+      widgetStyle.width = '330px';
+      widgetStyle.minWidth = '330px';
+      widgetStyle.maxWidth = '330px';
       widgetStyle.boxSizing = 'border-box';
+      if (collapsed) {
+        widgetStyle.justifyContent = 'center';
+        widgetStyle.padding = '10px 18px';
+      }
       widgetStyle.cursor = dragging ? 'grabbing' : 'grab';
       if (!dragging) widgetStyle.transition = 'left 160ms ease, top 160ms ease';
 
