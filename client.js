@@ -290,6 +290,10 @@ window.__ModuleLoader__.load({
       },
       hintRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
       link: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer', textDecoration: 'underline' },
+      linkBtn: {
+        border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit',
+        fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer', textDecoration: 'underline',
+      },
       saved: { fontSize: 10.5, color: '#2e9e5b' },
     };
 
@@ -544,6 +548,7 @@ window.__ModuleLoader__.load({
         children.push(h('div', {
           key: 'big',
           style: styles.bigRow,
+          onPointerDown: function (e) { e.stopPropagation(); },
           onClick: function () { if (balance.status !== 'ready') setSettingsOpen(true); },
         }, [
           h('span', {
@@ -590,13 +595,18 @@ window.__ModuleLoader__.load({
             h('button', { key: 's', type: 'button', style: styles.smallBtn, onClick: saveKey }, text.save),
           ]),
           h('div', { key: 'kh', style: styles.hintRow }, [
-            h('span', {
-              key: 'link', style: styles.link,
-              onClick: function () { try { window.open(providerMeta.keysUrl, '_blank'); } catch (e) { /* ignore */ } },
+            h('a', {
+              key: 'link',
+              href: providerMeta.keysUrl,
+              target: '_blank',
+              rel: 'noopener noreferrer',
+              style: styles.link,
+              onPointerDown: function (e) { e.stopPropagation(); },
             }, text.getKey),
             saved ? h('span', { key: 'ok', style: styles.saved }, '✓ ' + text.keySaved) : null,
-            apiKey ? h('span', {
-              key: 'clear', style: styles.link,
+            apiKey ? h('button', {
+              key: 'clear', type: 'button', style: styles.linkBtn,
+              onPointerDown: function (e) { e.stopPropagation(); },
               onClick: clearKey,
             }, text.clear) : null,
           ]),
