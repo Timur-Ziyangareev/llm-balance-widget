@@ -391,6 +391,36 @@ window.__ModuleLoader__.load({
       } catch (e) { return null; }
     }
 
+    /** Decorative trend icon: bars with an arrow running along them. */
+    function trendIcon(up, label) {
+      var color = up ? '#2e9e5b' : '#d9534f';
+      var heights = up ? [3, 6, 9, 12] : [12, 9, 6, 3];
+      var parts = [];
+      for (var i = 0; i < heights.length; i++) {
+        parts.push(h('rect', {
+          key: 'b' + i,
+          x: i * 4.5, y: 14 - heights[i], width: 3, height: heights[i],
+          rx: 0.8, fill: color, opacity: 0.5,
+        }));
+      }
+      parts.push(h('path', {
+        key: 'line',
+        d: up ? 'M1.6 10.4 L15 2' : 'M1.6 2 L15 10.4',
+        fill: 'none', stroke: color, strokeWidth: 1.3, strokeLinecap: 'round',
+      }));
+      parts.push(h('path', {
+        key: 'head',
+        d: up ? 'M11.6 2 L15 2 L15 5.4' : 'M11.6 10.4 L15 10.4 L15 7',
+        fill: 'none', stroke: color, strokeWidth: 1.3, strokeLinecap: 'round',
+      }));
+      return h('svg', {
+        width: 18, height: 15, viewBox: '0 0 18 15',
+        title: label || '', 'aria-label': label || '',
+        style: { display: 'block', overflow: 'visible' },
+      }, parts);
+    }
+
+
     /** A cached payload is only usable when every converter currency is present. */
     function hasRates(value) {
       if (!value) return false;
@@ -583,7 +613,8 @@ window.__ModuleLoader__.load({
         if (!el || !container) return;
         var nextHome = {
           left: container.clientWidth - el.offsetWidth - HOME_MARGIN,
-          top: Math.max(HOME_MARGIN, container.clientHeight - el.offsetHeight - 30),
+          // The compact strip sits a bit higher so it does not hug the very bottom.
+          top: Math.max(HOME_MARGIN, container.clientHeight - el.offsetHeight - (collapsed ? 54 : 30)),
           width: el.offsetWidth,
           height: el.offsetHeight
         };
@@ -923,8 +954,8 @@ window.__ModuleLoader__.load({
               move != null && Math.abs(move) > 0.0005
                 ? h('span', {
                   key: 'chg',
-                  style: { marginLeft: 6, color: move > 0 ? '#2e9e5b' : '#d9534f' },
-                }, (move > 0 ? '↑ +' : '↓ −') + Math.abs(move * 100).toFixed(2) + '%')
+                  style: { marginLeft: 6, display: 'inline-flex', alignItems: 'center' },
+                }, trendIcon(move > 0, (move > 0 ? '+' : '−') + Math.abs(move * 100).toFixed(2) + '%'))
                 : null,
             ]));
           })(units[ci]);
@@ -1049,9 +1080,9 @@ window.__ModuleLoader__.load({
       }
       // A fixed width keeps the widget from resizing when the currency changes:
       // "¥" and "$" have different widths, and the balance used to jump.
-      widgetStyle.width = '330px';
-      widgetStyle.minWidth = '330px';
-      widgetStyle.maxWidth = '330px';
+      widgetStyle.width = '380px';
+      widgetStyle.minWidth = '380px';
+      widgetStyle.maxWidth = '380px';
       widgetStyle.boxSizing = 'border-box';
       if (collapsed) {
         widgetStyle.justifyContent = 'center';
