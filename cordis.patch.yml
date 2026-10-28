@@ -1,0 +1,3 @@
+- insert:
+    - id: llm-balance
+      name: '@local/llm-balance-widget'
