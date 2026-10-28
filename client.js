@@ -812,7 +812,9 @@ window.__ModuleLoader__.load({
 
       if (!collapsed && rates) {
         var table = [];
-        var units = CURRENCIES.concat([{ code: 'RUB', symbol: '₽', label: '₽ RUB', decimals: 2 }]);
+        var units = CURRENCIES
+          .concat([{ code: 'RUB', symbol: '₽', label: '₽ RUB', decimals: 2 }])
+          .filter(function (item) { return item.code !== currency; });
         for (var ci = 0; ci < units.length; ci++) {
           (function (cur) {
             var multiplier = factorTo(cur.code, currency, rates);
@@ -835,17 +837,15 @@ window.__ModuleLoader__.load({
               }, fmtMoney(value, currency, lang),
                 copied === 'r-' + cur.code ? h('span', { key: 'ok', style: styles.saved }, '✓') : null),
             ]));
-            if (cur.code !== currency) {
-              table.push(h('div', { key: 'sub-' + cur.code, style: styles.sub }, [
-                multiplier != null ? '1 ' + cur.symbol + ' = ' + fmtMoney(multiplier, currency, lang) : '—',
-                move != null && Math.abs(move) > 0.0005
-                  ? h('span', {
-                    key: 'chg',
-                    style: { marginLeft: 6, color: move > 0 ? '#2e9e5b' : '#d9534f' },
-                  }, (move > 0 ? '↑ +' : '↓ −') + Math.abs(move * 100).toFixed(2) + '%')
-                  : null,
-              ]));
-            }
+            table.push(h('div', { key: 'sub-' + cur.code, style: styles.sub }, [
+              multiplier != null ? '1 ' + cur.symbol + ' = ' + fmtMoney(multiplier, currency, lang) : '—',
+              move != null && Math.abs(move) > 0.0005
+                ? h('span', {
+                  key: 'chg',
+                  style: { marginLeft: 6, color: move > 0 ? '#2e9e5b' : '#d9534f' },
+                }, (move > 0 ? '↑ +' : '↓ −') + Math.abs(move * 100).toFixed(2) + '%')
+                : null,
+            ]));
           })(units[ci]);
         }
         children.push(h('div', { key: 'rates', style: styles.rateTable }, table));
