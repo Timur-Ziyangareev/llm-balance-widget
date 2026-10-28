@@ -573,7 +573,7 @@ window.__ModuleLoader__.load({
         border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.4))',
         background: 'var(--dsw-alias-bg-base, transparent)',
         color: 'var(--dsw-alias-label-primary, inherit)',
-        fontFamily: 'inherit', fontSize: 12, textAlign: 'right', outline: 'none', cursor: 'text',
+        fontFamily: 'inherit', fontSize: 12, textAlign: 'left', outline: 'none', cursor: 'text',
       },
       result: {
         marginLeft: 0, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',

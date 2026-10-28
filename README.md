@@ -18,7 +18,7 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 ## Install
 
 1. Copy this folder to `<DSH profile>/node_modules/@local/llm-balance-widget`.
-2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.9.0"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
+2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.9.1"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
 3. Restart DeepSeek Harness.
 
 The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
@@ -93,7 +93,7 @@ node test/banks.test.mjs
 ### Установка
 
 1. Скопируй папку в `<профиль DSH>/node_modules/@local/llm-balance-widget`.
-2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.9.0"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
+2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.9.1"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
 3. Перезапусти DeepSeek Harness.
 
 Профиль на Windows: `%USERPROFILE%\.dsh\profiles\desktop`.
@@ -160,7 +160,7 @@ node test/banks.test.mjs
 ### 安装
 
 1. 把本文件夹复制到 `<DSH 配置目录>/node_modules/@local/llm-balance-widget`。
-2. 在 `<DSH 配置目录>/package.json` 的 `dependencies` 中加入 `"@local/llm-balance-widget": "1.9.0"`，并在 `dsh.profile.bundles` 中加入 `"@local/llm-balance-widget"`。
+2. 在 `<DSH 配置目录>/package.json` 的 `dependencies` 中加入 `"@local/llm-balance-widget": "1.9.1"`，并在 `dsh.profile.bundles` 中加入 `"@local/llm-balance-widget"`。
 3. 重启 DeepSeek Harness。
 
 Windows 上的配置目录：`%USERPROFILE%\.dsh\profiles\desktop`。
