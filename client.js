@@ -533,7 +533,11 @@ window.__ModuleLoader__.load({
         borderRadius: 6, padding: '2px 8px', fontSize: 11, cursor: 'pointer', fontFamily: 'inherit',
         fontWeight: 600,
       },
-      hintRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+      hintRow: {
+        display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8,
+        // Aligns the hint with the input, not with the field label.
+        paddingLeft: 70,
+      },
       link: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer', textDecoration: 'underline' },
       linkBtn: {
         border: 'none', background: 'transparent', padding: 0, fontFamily: 'inherit',
