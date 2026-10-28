@@ -514,7 +514,7 @@ window.__ModuleLoader__.load({
         color: 'var(--dsw-alias-label-primary, inherit)',
         fontFamily: 'inherit', fontSize: 12, outline: 'none', cursor: 'pointer',
       },
-      input: {
+      keyInput: {
         flex: '1 1 auto', minWidth: 0, padding: '3px 7px', borderRadius: 6,
         border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.4))',
         background: 'var(--dsw-alias-bg-base, transparent)',
@@ -1104,7 +1104,7 @@ window.__ModuleLoader__.load({
           h('div', { key: 'k', style: styles.field }, [
             h('span', { key: 'l', style: styles.fieldLabel }, text.apiKey),
             h('input', {
-              key: 'in', type: 'password', style: styles.input,
+              key: 'in', type: 'password', style: styles.keyInput,
               value: draftKey,
               placeholder: apiKey ? '••••••••' : text.keyPlaceholder,
               onChange: function (e) { setDraftKey(e.target.value); setKeyError(null); },
