@@ -12,12 +12,13 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 - **USD by default**, one click to **RUB** (converted at the CBR daily rate).
 - **English by default**, one click to **Russian**. Language and currency are both remembered.
 - Auto refresh every 60 seconds, drag anywhere, collapse to one line, position is remembered.
-- No backend: the browser talks to the provider directly, so the key never touches any server of this project.
+- **Get a key** opens the provider page in your default browser **and raises the browser window** (Windows), instead of leaving a background tab.
+- The key is used by the browser itself; the tiny `/llm-balance/open` route exists only to open that page and never receives the key.
 
 ## Install
 
 1. Copy this folder to `<DSH profile>/node_modules/@local/llm-balance-widget`.
-2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.0.1"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
+2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.1.0"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
 3. Restart DeepSeek Harness.
 
 The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
@@ -31,7 +32,7 @@ Click **⚙** in the widget, pick a provider, paste the key and press **Save**.
 
 ## Privacy
 
-The key is stored in the app window's `localStorage` under `llm-balance.key.<provider>` and is sent only to `api.deepseek.com` or `openrouter.ai`. There is no proxy, no telemetry and no analytics.
+The key is stored in the app window's `localStorage` under `llm-balance.key.<provider>` and is sent only to `api.deepseek.com` or `openrouter.ai`. There is no proxy, no telemetry and no analytics. The only server route (`/llm-balance/open`) opens the provider page and never receives the key.
 
 ## Limitations
 
@@ -61,12 +62,13 @@ The test loads `client.js` in a sandbox and checks the response parsers against 
 - **По умолчанию доллары**, одним кликом — **рубли** (по курсу ЦБ на текущий день).
 - **По умолчанию английский**, одним кликом — **русский**. Язык и валюта запоминаются.
 - Автообновление раз в 60 секунд, перетаскивание, сворачивание в одну строку, позиция запоминается.
-- Серверной части нет: браузер обращается к провайдеру напрямую, ключ не проходит через чужие серверы.
+- **«Получить ключ»** открывает страницу провайдера в браузере по умолчанию **и поднимает окно браузера** (Windows), а не оставляет вкладку на фоне.
+- Ключ использует сам браузер; маленький роут `/llm-balance/open` нужен только для открытия страницы и ключ не получает.
 
 ### Установка
 
 1. Скопируй папку в `<профиль DSH>/node_modules/@local/llm-balance-widget`.
-2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.0.0"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
+2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.1.0"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
 3. Перезапусти DeepSeek Harness.
 
 Профиль на Windows лежит в `%USERPROFILE%\.dsh\profiles\desktop`.

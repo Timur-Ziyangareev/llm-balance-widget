@@ -88,6 +88,13 @@ window.__ModuleLoader__.load({
     function t(lang) { return TEXT[lang === 'ru' ? 'ru' : 'en']; }
     function locale(lang) { return lang === 'ru' ? 'ru-RU' : 'en-US'; }
 
+    function absUrl(path) {
+      try {
+        if (window.location && window.location.origin) return new URL(path, window.location.origin).href;
+      } catch (e) { /* keep relative */ }
+      return path;
+    }
+
     function storageGet(key) {
       try { return window.localStorage.getItem(key); } catch (e) { return null; }
     }
@@ -441,6 +448,23 @@ window.__ModuleLoader__.load({
         setBalance({ status: 'no-key' });
       }
 
+      /** Open the provider page through the host first: it can raise the browser
+       *  window, a plain link only opens a background tab. */
+      function openKeys(url) {
+        var fallback = function () {
+          try { window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) { /* ignore */ }
+        };
+        try {
+          fetch(absUrl('/llm-balance/open'), {
+            method: 'POST',
+            headers: { 'content-type': 'application/json' },
+            body: JSON.stringify({ url: url })
+          }).then(function (res) {
+            if (!res.ok) fallback();
+          }).catch(fallback);
+        } catch (e) { fallback(); }
+      }
+
       function onPointerDown(event) {
         if (event.button !== 0) return;
         var target = event.target;
@@ -602,6 +626,11 @@ window.__ModuleLoader__.load({
               rel: 'noopener noreferrer',
               style: styles.link,
               onPointerDown: function (e) { e.stopPropagation(); },
+              onClick: function (e) {
+                e.preventDefault();
+                e.stopPropagation();
+                openKeys(providerMeta.keysUrl);
+              },
             }, text.getKey),
             saved ? h('span', { key: 'ok', style: styles.saved }, '✓ ' + text.keySaved) : null,
             apiKey ? h('button', {
