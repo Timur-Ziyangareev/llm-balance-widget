@@ -1061,7 +1061,10 @@ window.__ModuleLoader__.load({
             key: 'a',
             style: styles.amount,
             title: balance.status === 'ready' ? text.refresh : text.addKey,
-            onClick: function () { if (balance.status !== 'ready') setSettingsOpen(true); },
+            onClick: function () {
+              if (balance.status === 'ready') refresh(provider, apiKey);
+              else setSettingsOpen(true);
+            },
           }, amountText),
           tokensText != null ? h('span', { key: 'k', style: styles.tokens, title: text.tokensHint },
             '≈ ' + tokensText + ' ' + text.tokens) : null,
