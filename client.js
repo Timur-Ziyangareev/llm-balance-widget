@@ -54,6 +54,7 @@ window.__ModuleLoader__.load({
         expand: 'Expand',
         loading: 'loading…',
         keyPlaceholder: 'paste your key',
+        keyFormat: 'That does not look like a key — DeepSeek and OpenRouter keys start with "sk-".',
         getKey: 'get a key',
         keySaved: 'key saved',
         refresh: 'refresh'
@@ -79,6 +80,7 @@ window.__ModuleLoader__.load({
         expand: 'Развернуть',
         loading: 'загрузка…',
         keyPlaceholder: 'вставьте ключ',
+        keyFormat: 'Это не похоже на ключ — ключи DeepSeek и OpenRouter начинаются с «sk-».',
         getKey: 'получить ключ',
         keySaved: 'ключ сохранён',
         refresh: 'обновить'
@@ -302,6 +304,7 @@ window.__ModuleLoader__.load({
         fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer', textDecoration: 'underline',
       },
       saved: { fontSize: 10.5, color: '#2e9e5b' },
+      error: { fontSize: 10.5, color: '#d9534f' },
     };
 
     function BalanceWidget() {
@@ -319,6 +322,9 @@ window.__ModuleLoader__.load({
 
       var draftRef = React.useState('');
       var draftKey = draftRef[0], setDraftKey = draftRef[1];
+
+      var keyErrorRef = React.useState(null);
+      var keyError = keyErrorRef[0], setKeyError = keyErrorRef[1];
 
       var balanceRef = React.useState({ status: 'idle' });
       var balance = balanceRef[0], setBalance = balanceRef[1];
@@ -433,6 +439,11 @@ window.__ModuleLoader__.load({
       function saveKey() {
         var value = draftKey.trim();
         if (!value) return;
+        if (!/^sk-[A-Za-z0-9_-]{8,}$/.test(value)) {
+          setKeyError(t(lang).keyFormat);
+          return;
+        }
+        setKeyError(null);
         storageSet(K.keyPrefix + provider, value);
         setApiKey(value);
         setDraftKey('');
@@ -613,11 +624,12 @@ window.__ModuleLoader__.load({
               key: 'in', type: 'password', style: styles.input,
               value: draftKey,
               placeholder: apiKey ? '••••••••' : text.keyPlaceholder,
-              onChange: function (e) { setDraftKey(e.target.value); },
+              onChange: function (e) { setDraftKey(e.target.value); setKeyError(null); },
               onKeyDown: function (e) { if (e.key === 'Enter') saveKey(); },
             }),
             h('button', { key: 's', type: 'button', style: styles.smallBtn, onClick: saveKey }, text.save),
           ]),
+          keyError ? h('div', { key: 'kerr', style: styles.error }, keyError) : null,
           h('div', { key: 'kh', style: styles.hintRow }, [
             h('a', {
               key: 'link',

@@ -18,7 +18,7 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 ## Install
 
 1. Copy this folder to `<DSH profile>/node_modules/@local/llm-balance-widget`.
-2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.1.1"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
+2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.1.2"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
 3. Restart DeepSeek Harness.
 
 The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
@@ -26,6 +26,8 @@ The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
 ## Usage
 
 Click **⚙** in the widget, pick a provider, paste the key and press **Save**.
+
+Keys look like `sk-…` (DeepSeek) or `sk-or-v1-…` (OpenRouter). Anything else — a UUID, a session id, a key from another service — is rejected in the widget before it is saved, because the provider would answer `401` anyway.
 
 - DeepSeek key: <https://platform.deepseek.com/api_keys>
 - OpenRouter key: <https://openrouter.ai/keys>
@@ -68,7 +70,7 @@ The test loads `client.js` in a sandbox and checks the response parsers against 
 ### Установка
 
 1. Скопируй папку в `<профиль DSH>/node_modules/@local/llm-balance-widget`.
-2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.1.1"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
+2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.1.2"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
 3. Перезапусти DeepSeek Harness.
 
 Профиль на Windows лежит в `%USERPROFILE%\.dsh\profiles\desktop`.
@@ -76,6 +78,8 @@ The test loads `client.js` in a sandbox and checks the response parsers against 
 ### Как пользоваться
 
 Нажми **⚙** в виджете, выбери провайдера, вставь ключ и нажми **Save**.
+
+Ключи выглядят как `sk-…` (DeepSeek) или `sk-or-v1-…` (OpenRouter). Всё остальное — UUID, id сессии, ключ другого сервиса — виджет отклоняет ещё до сохранения, потому что провайдер всё равно ответил бы `401`.
 
 - Ключ DeepSeek: <https://platform.deepseek.com/api_keys>
 - Ключ OpenRouter: <https://openrouter.ai/keys>
