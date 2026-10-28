@@ -1216,11 +1216,11 @@ window.__ModuleLoader__.load({
         widgetStyle.left = pos.left + 'px';
         widgetStyle.top = pos.top + 'px';
       }
-      // Expanded view is fixed-width; the compact strip hugs its content and only
-      // widens when the settings panel is open.
+      // Fixed width in the expanded view keeps the currency switch from resizing it.
+      // The compact strip can grow a little to fit "≈ N токенов".
       if (collapsed) {
         widgetStyle.width = 'auto';
-        widgetStyle.minWidth = settingsOpen ? '330px' : '240px';
+        widgetStyle.minWidth = '330px';
         widgetStyle.maxWidth = '400px';
         widgetStyle.justifyContent = 'center';
         widgetStyle.padding = '8px 16px';
