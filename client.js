@@ -418,14 +418,24 @@ window.__ModuleLoader__.load({
         pointerEvents: 'auto', userSelect: 'none', zIndex: 9999,
         cursor: 'grab',
       },
-      headerRow: { display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-      header: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'inherit' },
       iconBtn: {
         border: 'none', background: 'transparent', color: 'var(--dsw-alias-label-tertiary, #aaaaaa)',
         cursor: 'pointer', fontSize: 14, lineHeight: '14px', padding: '0 3px', fontFamily: 'inherit',
       },
       meta: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       bigRow: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
+      balanceRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 },
+      balanceLabel: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      smallRow: { display: 'flex', alignItems: 'center', gap: 6 },
+      smallAmount: { fontSize: 14, fontWeight: 700 },
+      smallTokens: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      gearBtn: {
+        width: 30, height: 30, display: 'flex', alignItems: 'center', justifyContent: 'center',
+        border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.45))',
+        background: 'transparent', color: 'var(--dsw-alias-label-primary, inherit)',
+        borderRadius: 9, fontSize: 17, lineHeight: '17px', cursor: 'pointer', fontFamily: 'inherit', padding: 0,
+        flex: '0 0 auto',
+      },
       amount: { fontSize: 21, fontWeight: 700, lineHeight: '26px' },
       tokens: { fontSize: 13, fontWeight: 600, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       secondary: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
@@ -818,29 +828,52 @@ window.__ModuleLoader__.load({
       }
 
       var children = [];
-      children.push(h('div', { key: 'hdr', style: styles.headerRow }, [
-        h('span', { key: 't', style: styles.header }, text.balance),
-        h('span', { key: 'btns', style: { display: 'flex', gap: 2 } }, [
-          h('button', {
-            key: 'gear', type: 'button', style: styles.iconBtn,
-            title: text.settings, 'aria-label': text.settings,
-            onClick: function () { setSettingsOpen(!settingsOpen); },
-          }, '⚙'),
-          h('button', {
-            key: 'collapse', type: 'button', style: styles.iconBtn,
-            title: collapsed ? text.expand : text.collapse,
-            'aria-label': collapsed ? text.expand : text.collapse,
-            onClick: function () { setCollapsed(!collapsed); },
-          }, collapsed ? '+' : '−'),
-        ]),
-      ]));
+
+      function gearButton(small) {
+        var style = {};
+        for (var key in styles.gearBtn) style[key] = styles.gearBtn[key];
+        if (small) {
+          style.width = 24;
+          style.height = 24;
+          style.fontSize = 14;
+          style.borderRadius = 7;
+        }
+        return h('button', {
+          key: 'gear', type: 'button', style: style,
+          title: text.settings, 'aria-label': text.settings,
+          onPointerDown: function (e) { e.stopPropagation(); },
+          onClick: function (e) { e.stopPropagation(); setSettingsOpen(!settingsOpen); },
+        }, '⚙');
+      }
+      function collapseButton(small) {
+        var style = {};
+        for (var key in styles.iconBtn) style[key] = styles.iconBtn[key];
+        if (!small) {
+          style.width = 30;
+          style.height = 30;
+          style.fontSize = 18;
+          style.lineHeight = '18px';
+          style.border = '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.45))';
+          style.borderRadius = 9;
+        }
+        return h('button', {
+          key: 'collapse', type: 'button', style: style,
+          title: collapsed ? text.expand : text.collapse,
+          'aria-label': collapsed ? text.expand : text.collapse,
+          onPointerDown: function (e) { e.stopPropagation(); },
+          onClick: function (e) { e.stopPropagation(); setCollapsed(!collapsed); },
+        }, collapsed ? '+' : '−');
+      }
 
       if (collapsed) {
-        children.push(h('div', { key: 'small', style: styles.bigRow }, [
-          h('span', { key: 'a', style: { fontSize: 14, fontWeight: 700 } },
+        children.push(h('div', { key: 'small', style: styles.smallRow }, [
+          h('span', { key: 'l', style: styles.balanceLabel }, text.balance),
+          h('span', { key: 'a', style: styles.smallAmount },
             balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
-          tokens != null ? h('span', { key: 'k', style: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' } },
-            '≈' + fmtTokens(tokens, lang)) : null,
+          tokens != null ? h('span', { key: 'k', style: styles.smallTokens }, '≈' + fmtTokens(tokens, lang)) : null,
+          h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
+          gearButton(true),
+          collapseButton(true),
         ]));
       } else {
         children.push(h('div', { key: 'meta', style: styles.meta }, metaText));
@@ -893,17 +926,21 @@ window.__ModuleLoader__.load({
       if (!collapsed) {
         children.push(h('div', {
           key: 'big',
-          style: styles.bigRow,
+          style: styles.balanceRow,
           onPointerDown: function (e) { e.stopPropagation(); },
-          onClick: function () { if (balance.status !== 'ready') setSettingsOpen(true); },
         }, [
+          h('span', { key: 'l', style: styles.balanceLabel }, text.balance),
           h('span', {
             key: 'a',
             style: styles.amount,
             title: balance.status === 'ready' ? text.refresh : text.addKey,
+            onClick: function () { if (balance.status !== 'ready') setSettingsOpen(true); },
           }, amountText),
           tokens != null ? h('span', { key: 'k', style: styles.tokens, title: text.tokensHint },
             '≈ ' + fmtTokens(tokens, lang) + ' ' + text.tokens) : null,
+          h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
+          gearButton(false),
+          collapseButton(false),
         ]));
         if (balance.status === 'ready' && nativeCode && nativeAmount != null && nativeCode !== currency) {
           children.push(h('div', { key: 'native', style: styles.secondary },
