@@ -1,6 +1,6 @@
 {
   "name": "@local/llm-balance-widget",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "private": true,
   "type": "module",
   "description": "Per-user LLM API balance (DeepSeek / OpenRouter) in a bottom-right widget.",
@@ -10,7 +10,10 @@
     "./locale/*.json": "./locale/*.json",
     "./icon": "./icon.svg"
   },
-  "files": ["index.js", "client.js", "cordis.patch.yml", "locale/*.json", "icon.svg"],
+  "files": ["index.js", "client.js", "lib/*.js", "cordis.patch.yml", "locale/*.json", "icon.svg"],
+  "scripts": {
+    "test": "node test/providers.test.cjs && node test/banks.test.mjs"
+  },
   "dsh": {
     "bundle": { "patch": "./cordis.patch.yml" },
     "client": {

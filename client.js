@@ -8,6 +8,7 @@ window.__ModuleLoader__.load({
     var DEEPSEEK_URL = 'https://api.deepseek.com/user/balance';
     var OPENROUTER_URL = 'https://openrouter.ai/api/v1/credits';
     var RATES_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
+    var BANK_URL = '/llm-balance/bank';
 
     // USD per 1M input tokens, cache miss (DeepSeek V3.2 pricing).
     var DEEPSEEK_PRICE = 0.28;
@@ -67,6 +68,8 @@ window.__ModuleLoader__.load({
         expand: 'Expand',
         loading: 'loading…',
         cbr: 'CBR',
+        fed: 'Fed',
+        pboc: 'PBOC',
         keyPlaceholder: 'paste your key',
         keyFormat: 'That does not look like a key — DeepSeek and OpenRouter keys start with "sk-".',
         copy: 'Click to copy',
@@ -97,6 +100,8 @@ window.__ModuleLoader__.load({
         expand: 'Развернуть',
         loading: 'загрузка…',
         cbr: 'ЦБ',
+        fed: 'ФРС',
+        pboc: 'НБК',
         keyPlaceholder: 'вставьте ключ',
         keyFormat: 'Это не похоже на ключ — ключи DeepSeek и OpenRouter начинаются с «sk-».',
         copy: 'Нажмите, чтобы скопировать',
@@ -127,6 +132,8 @@ window.__ModuleLoader__.load({
         expand: '展开',
         loading: '加载中…',
         cbr: '央行',
+        fed: '美联储',
+        pboc: '中国央行',
         keyPlaceholder: '粘贴密钥',
         keyFormat: '这不像密钥：DeepSeek 和 OpenRouter 的密钥以 “sk-” 开头。',
         copy: '点击复制',
@@ -526,6 +533,9 @@ window.__ModuleLoader__.load({
       var ratesRef = React.useState(null);
       var rates = ratesRef[0], setRates = ratesRef[1];
 
+      var bankRef = React.useState({ status: 'idle' });
+      var bank = bankRef[0], setBank = bankRef[1];
+
       var settingsRef = React.useState(false);
       var settingsOpen = settingsRef[0], setSettingsOpen = settingsRef[1];
 
@@ -617,6 +627,24 @@ window.__ModuleLoader__.load({
         }, 10 * 60 * 1000);
         return function () { clearInterval(timer); };
       }, []);
+
+      React.useEffect(function () {
+        if (currency !== 'USD' && currency !== 'CNY') { setBank({ status: 'idle' }); return; }
+        var stopped = false;
+        setBank({ status: 'loading' });
+        fetch(absUrl(BANK_URL + '?base=' + currency.toLowerCase()), { cache: 'no-store' })
+          .then(function (res) { return res.ok ? res.json() : null; })
+          .then(function (body) {
+            if (stopped) return;
+            if (body && body.ok && body.base === currency && body.rates) {
+              setBank({ status: 'ready', base: body.base, date: body.date, rates: body.rates, source: body.source });
+            } else {
+              setBank({ status: 'unavailable' });
+            }
+          })
+          .catch(function () { if (!stopped) setBank({ status: 'unavailable' }); });
+        return function () { stopped = true; };
+      }, [currency]);
 
       function refresh(providerArg, keyArg) {
         var useProvider = providerArg || provider;
@@ -766,6 +794,13 @@ window.__ModuleLoader__.load({
         usd = toUsd(balance.data, rates);
       }
       var shown = fromUsd(usd, currency, rates);
+      // Native bank data is used only while it is reasonably fresh; otherwise
+      // the converter falls back to the CBR cross-rate.
+      var bankFresh = bank.status === 'ready' && bank.base === currency && !!bank.date
+        && Math.abs(Date.now() - Date.parse(bank.date)) < 7 * 864e5;
+      function bankRate(code) {
+        return bankFresh && bank.rates && typeof bank.rates[code] === 'number' ? bank.rates[code] : null;
+      }
       var nativeCode = balance.data ? balance.data.currency : null;
       var nativeAmount = balance.data ? balance.data.amount : null;
       var tokens = provider === 'deepseek' && usd != null ? usd / DEEPSEEK_PRICE * 1e6 : null;
@@ -780,6 +815,9 @@ window.__ModuleLoader__.load({
       var metaText = providerMeta.label;
       if (balance.status === 'ready' && balance.at) metaText += ' · ' + text.updated + ' ' + fmtClock(balance.at, lang);
       if (rates && rates.date) metaText += ' · ' + text.cbr + ' ' + fmtDay(rates.date, lang);
+      if (bankFresh && bank.date) {
+        metaText += ' · ' + (bank.source === 'fed' ? text.fed : text.pboc) + ' ' + fmtDay(bank.date, lang);
+      }
 
       var children = [];
       children.push(h('div', { key: 'hdr', style: styles.headerRow }, [
@@ -817,10 +855,13 @@ window.__ModuleLoader__.load({
           .filter(function (item) { return item.code !== currency; });
         for (var ci = 0; ci < units.length; ci++) {
           (function (cur) {
-            var multiplier = factorTo(cur.code, currency, rates);
+            var nativeRate = bankRate(cur.code);
+            var multiplier = nativeRate != null ? nativeRate : factorTo(cur.code, currency, rates);
             var amount = toNumber(inputs[cur.code]);
             var value = multiplier != null && amount != null ? amount * multiplier : null;
-            var move = cur.code === 'RUB' ? null : (rates.change ? rates.change[cur.code.toLowerCase()] : null);
+            var move = (cur.code === 'RUB' || nativeRate != null)
+              ? null
+              : (rates.change ? rates.change[cur.code.toLowerCase()] : null);
             table.push(h('div', { key: 'row-' + cur.code, style: styles.row }, [
               h('span', { key: 'c', style: styles.code }, cur.label),
               h('input', {
