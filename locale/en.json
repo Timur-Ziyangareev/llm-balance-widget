@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "LLM Balance",
+    "description": "Shows your own DeepSeek or OpenRouter balance in a bottom-right widget. Bring your own API key."
+  }
+}

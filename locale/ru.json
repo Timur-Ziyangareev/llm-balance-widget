@@ -1,0 +1,6 @@
+{
+  "meta": {
+    "title": "Баланс LLM",
+    "description": "Показывает баланс DeepSeek или OpenRouter по вашему API-ключу в виджете справа снизу."
+  }
+}
