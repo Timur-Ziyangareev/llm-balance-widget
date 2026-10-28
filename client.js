@@ -1081,16 +1081,20 @@ window.__ModuleLoader__.load({
         widgetStyle.left = pos.left + 'px';
         widgetStyle.top = pos.top + 'px';
       }
-      // A fixed width keeps the widget from resizing when the currency changes:
-      // "¥" and "$" have different widths, and the balance used to jump.
-      widgetStyle.width = '380px';
-      widgetStyle.minWidth = '380px';
-      widgetStyle.maxWidth = '380px';
-      widgetStyle.boxSizing = 'border-box';
+      // Expanded view keeps a fixed width so the currency switch never resizes it.
+      // The compact strip hugs its content instead of stretching to that width.
       if (collapsed) {
+        widgetStyle.width = 'auto';
+        widgetStyle.minWidth = '300px';
+        widgetStyle.maxWidth = '380px';
         widgetStyle.justifyContent = 'center';
-        widgetStyle.padding = '10px 18px';
+        widgetStyle.padding = '8px 14px';
+      } else {
+        widgetStyle.width = '380px';
+        widgetStyle.minWidth = '380px';
+        widgetStyle.maxWidth = '380px';
       }
+      widgetStyle.boxSizing = 'border-box';
       widgetStyle.cursor = dragging ? 'grabbing' : 'grab';
       if (!dragging) widgetStyle.transition = 'left 160ms ease, top 160ms ease';
 
