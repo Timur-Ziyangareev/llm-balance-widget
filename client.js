@@ -576,10 +576,11 @@ window.__ModuleLoader__.load({
         fontFamily: 'inherit', fontSize: 12, textAlign: 'right', outline: 'none', cursor: 'text',
       },
       result: {
-        marginLeft: 'auto', fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
+        marginLeft: 6, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
         cursor: 'copy', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
       },
-      sub: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', paddingLeft: 62 },
+      sub: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', textAlign: 'right' },
+      eq: { marginLeft: 'auto', fontSize: 12, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       divider: { borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))', margin: '4px 0 2px' },
       rubList: {
         display: 'flex', flexWrap: 'wrap', gap: '2px 10px',
@@ -1056,6 +1057,7 @@ window.__ModuleLoader__.load({
                 onChange: function (e) { setInput(cur.code, e.target.value); },
                 'aria-label': cur.label,
               }),
+              h('span', { key: 'eq', style: styles.eq }, '='),
               h('span', {
                 key: 'r', style: styles.result, title: text.copy,
                 onClick: function () { if (copyInteger(value)) flashCopied('r-' + cur.code); },
