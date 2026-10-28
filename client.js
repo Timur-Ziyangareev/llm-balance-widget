@@ -632,12 +632,7 @@ window.__ModuleLoader__.load({
         if (currency !== 'USD' && currency !== 'CNY') { setBank({ status: 'idle' }); return; }
         var stopped = false;
         setBank({ status: 'loading' });
-        fetch(absUrl(BANK_URL), {
-          method: 'POST',
-          headers: { 'content-type': 'application/json' },
-          body: JSON.stringify({ base: currency.toLowerCase() }),
-          cache: 'no-store',
-        })
+        fetch(absUrl(BANK_URL + '?base=' + currency.toLowerCase()), { cache: 'no-store' })
           .then(function (res) { return res.ok ? res.json() : null; })
           .then(function (body) {
             if (stopped) return;
@@ -707,13 +702,10 @@ window.__ModuleLoader__.load({
           try { window.open(url, '_blank', 'noopener,noreferrer'); } catch (e) { /* ignore */ }
         };
         try {
-          fetch(absUrl('/llm-balance/open'), {
-            method: 'POST',
-            headers: { 'content-type': 'application/json' },
-            body: JSON.stringify({ url: url })
-          }).then(function (res) {
-            if (!res.ok) fallback();
-          }).catch(fallback);
+          fetch(absUrl('/llm-balance/open?url=' + encodeURIComponent(url)), { method: 'POST' })
+            .then(function (res) {
+              if (!res.ok) fallback();
+            }).catch(fallback);
         } catch (e) { fallback(); }
       }
 
@@ -819,9 +811,10 @@ window.__ModuleLoader__.load({
 
       var metaText = providerMeta.label;
       if (balance.status === 'ready' && balance.at) metaText += ' · ' + text.updated + ' ' + fmtClock(balance.at, lang);
-      if (rates && rates.date) metaText += ' · ' + text.cbr + ' ' + fmtDay(rates.date, lang);
       if (bankFresh && bank.date) {
         metaText += ' · ' + (bank.source === 'fed' ? text.fed : text.pboc) + ' ' + fmtDay(bank.date, lang);
+      } else if (rates && rates.date) {
+        metaText += ' · ' + text.cbr + ' ' + fmtDay(rates.date, lang);
       }
 
       var children = [];

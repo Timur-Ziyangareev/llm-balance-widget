@@ -51,18 +51,28 @@ function send(res, status, body) {
   res.end(JSON.stringify(body));
 }
 
-function readBody(req) {
+/** The host may consume the request body, so callers pass data in the query;
+ *  the body stays a fallback and a short timeout keeps the route from hanging. */
+function readBody(req, timeout = 300) {
   return new Promise((resolve) => {
     const chunks = [];
     let size = 0;
+    const timer = setTimeout(() => resolve(''), timeout);
+    const finish = (value) => { clearTimeout(timer); resolve(value); };
     req.on('data', (chunk) => {
       size += chunk.length;
-      if (size > 4096) { req.destroy(); resolve(''); return; }
+      if (size > 4096) { req.destroy(); finish(''); return; }
       chunks.push(chunk);
     });
-    req.on('end', () => resolve(Buffer.concat(chunks).toString('utf8')));
-    req.on('error', () => resolve(''));
+    req.on('end', () => finish(Buffer.concat(chunks).toString('utf8')));
+    req.on('error', () => finish(''));
   });
+}
+
+function queryParam(req, name) {
+  try {
+    return new URL(String(req.url || ''), 'http://127.0.0.1').searchParams.get(name) || '';
+  } catch (error) { return ''; }
 }
 
 /** Open in the default browser: Electron shell first, `start` as a fallback. */
@@ -123,9 +133,11 @@ export function apply(ctx) {
     kind: 'exact',
     path: '/llm-balance/open',
     handler: async (req, res) => {
-      const raw = await readBody(req);
-      let url = '';
-      try { url = String(JSON.parse(raw || '{}').url || ''); } catch (error) { url = ''; }
+      let url = queryParam(req, 'url');
+      if (!url) {
+        const raw = await readBody(req);
+        try { url = String(JSON.parse(raw || '{}').url || ''); } catch (error) { url = ''; }
+      }
       let parsed = null;
       try { parsed = new URL(url); } catch (error) { parsed = null; }
       if (!parsed || !/^https?:$/.test(parsed.protocol) || !ALLOWED_HOSTS.has(parsed.hostname)) {
@@ -142,10 +154,11 @@ export function apply(ctx) {
     kind: 'exact',
     path: '/llm-balance/bank',
     handler: async (req, res) => {
-      const raw = await readBody(req);
-      let base = '';
-      try { base = String(JSON.parse(raw || '{}').base || ''); } catch (error) { base = ''; }
-      if (!base) base = String(/[?&]base=([a-z]{3})/i.exec(String(req.url || ''))?.[1] || '');
+      let base = queryParam(req, 'base');
+      if (!base) {
+        const raw = await readBody(req);
+        try { base = String(JSON.parse(raw || '{}').base || ''); } catch (error) { base = ''; }
+      }
       base = base.toLowerCase();
       const source = BANK_SOURCES[base];
       if (!source) { send(res, 400, { ok: false, reason: 'unknown-base' }); return; }
