@@ -142,7 +142,11 @@ export function apply(ctx) {
     kind: 'exact',
     path: '/llm-balance/bank',
     handler: async (req, res) => {
-      const base = String(/[?&]base=([a-z]{3})/i.exec(String(req.url || ''))?.[1] || '').toLowerCase();
+      const raw = await readBody(req);
+      let base = '';
+      try { base = String(JSON.parse(raw || '{}').base || ''); } catch (error) { base = ''; }
+      if (!base) base = String(/[?&]base=([a-z]{3})/i.exec(String(req.url || ''))?.[1] || '');
+      base = base.toLowerCase();
       const source = BANK_SOURCES[base];
       if (!source) { send(res, 400, { ok: false, reason: 'unknown-base' }); return; }
 

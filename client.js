@@ -632,7 +632,12 @@ window.__ModuleLoader__.load({
         if (currency !== 'USD' && currency !== 'CNY') { setBank({ status: 'idle' }); return; }
         var stopped = false;
         setBank({ status: 'loading' });
-        fetch(absUrl(BANK_URL + '?base=' + currency.toLowerCase()), { cache: 'no-store' })
+        fetch(absUrl(BANK_URL), {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify({ base: currency.toLowerCase() }),
+          cache: 'no-store',
+        })
           .then(function (res) { return res.ok ? res.json() : null; })
           .then(function (body) {
             if (stopped) return;
