@@ -486,8 +486,8 @@ window.__ModuleLoader__.load({
       },
       sumCode: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       sumList: {
-        display: 'flex', flexWrap: 'wrap', gap: '2px 10px',
-        fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)',
+        display: 'flex', flexWrap: 'nowrap', gap: '0 8px', justifyContent: 'space-between',
+        fontSize: 10, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', overflow: 'hidden',
       },
       sumItem: { whiteSpace: 'nowrap', cursor: 'copy' },
       smallRow: { display: 'flex', alignItems: 'center', gap: 6 },
@@ -1093,10 +1093,9 @@ window.__ModuleLoader__.load({
               sumOut.push(h('span', {
                 key: 'sum-' + cur.code, style: styles.sumItem, title: text.copy,
                 onClick: function () { if (copyInteger(converted)) flashCopied('sum-' + cur.code); },
-              }, cur.symbol + ' ' + fmtAmount(converted, cur.decimals, lang),
+              }, cur.symbol + ' ' + fmtAmount(converted, Math.abs(converted) >= 100 ? 0 : cur.decimals, lang),
                 copied === 'sum-' + cur.code ? h('span', { key: 'ok', style: styles.saved }, '✓') : null));
-            })(allUnits[si]);
-          }
+            })(allUnits[si]);          }
         }
         children.push(h('div', { key: 'sum', style: styles.sumBox }, [
           h('div', { key: 'row', style: styles.sumRow }, [
