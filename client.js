@@ -478,11 +478,11 @@ window.__ModuleLoader__.load({
       },
       sumRow: { display: 'flex', alignItems: 'center', gap: 6 },
       sumInput: {
-        width: 92, boxSizing: 'border-box', padding: '3px 7px', borderRadius: 6,
+        width: 92, boxSizing: 'border-box', padding: '3px 9px', borderRadius: 6,
         border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.4))',
         background: 'var(--dsw-alias-bg-base, transparent)',
         color: 'var(--dsw-alias-label-primary, inherit)',
-        fontFamily: 'inherit', fontSize: 12, textAlign: 'right', outline: 'none', cursor: 'text',
+        fontFamily: 'inherit', fontSize: 12, textAlign: 'left', outline: 'none', cursor: 'text',
       },
       sumCode: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       sumList: {
