@@ -872,7 +872,6 @@ window.__ModuleLoader__.load({
             balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
           tokens != null ? h('span', { key: 'k', style: styles.smallTokens }, '≈' + fmtTokens(tokens, lang)) : null,
           h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
-          gearButton(true),
           collapseButton(true),
         ]));
       } else {
@@ -1038,10 +1037,11 @@ window.__ModuleLoader__.load({
         widgetStyle.left = pos.left + 'px';
         widgetStyle.top = pos.top + 'px';
       }
-      widgetStyle.minWidth = '280px';
+      widgetStyle.minWidth = collapsed ? '340px' : '280px';
       if (collapsed) {
         widgetStyle.boxSizing = 'border-box';
         widgetStyle.justifyContent = 'center';
+        widgetStyle.padding = '10px 18px';
       }
       widgetStyle.cursor = dragging ? 'grabbing' : 'grab';
       if (!dragging) widgetStyle.transition = 'left 160ms ease, top 160ms ease';
