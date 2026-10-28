@@ -65,6 +65,26 @@ assert.strictEqual(ds.currency, 'USD');
 assert.strictEqual(ds.amount, 12.34);
 assert.strictEqual(ds.granted, 2);
 
+// A zero USD wallet must not hide a funded CNY wallet.
+const dsMixed = parseDeepSeek({
+  balance_infos: [
+    { currency: 'USD', total_balance: '0.00', granted_balance: '0.00', topped_up_balance: '0.00' },
+    { currency: 'CNY', total_balance: '18.51', granted_balance: '0.00', topped_up_balance: '18.51' },
+  ],
+});
+assert.strictEqual(dsMixed.currency, 'CNY');
+assert.strictEqual(dsMixed.amount, 18.51);
+
+// Everything empty -> still USD, so the widget shows 0,00 $.
+const dsEmpty = parseDeepSeek({
+  balance_infos: [
+    { currency: 'CNY', total_balance: '0.00' },
+    { currency: 'USD', total_balance: '0.00' },
+  ],
+});
+assert.strictEqual(dsEmpty.currency, 'USD');
+assert.strictEqual(dsEmpty.amount, 0);
+
 // DeepSeek: falls back to CNY when USD is absent.
 const dsCny = parseDeepSeek({ balance_infos: [{ currency: 'CNY', total_balance: '100' }] });
 assert.strictEqual(dsCny.currency, 'CNY');

@@ -297,13 +297,25 @@ window.__ModuleLoader__.load({
     /** DeepSeek: pick the balance entry in USD, falling back to CNY. */
     function parseDeepSeek(body) {
       var infos = body && Array.isArray(body.balance_infos) ? body.balance_infos : [];
-      var pick = null;
+      // A zero USD wallet must not hide a funded CNY wallet.
+      var funded = [];
       for (var i = 0; i < infos.length; i++) {
-        if (infos[i] && infos[i].currency === 'USD') { pick = infos[i]; break; }
+        var amount = infos[i] ? Number(infos[i].total_balance) : NaN;
+        if (isFinite(amount) && amount > 0) funded.push(infos[i]);
+      }
+      var pick = null;
+      for (var j = 0; j < funded.length; j++) {
+        if (funded[j].currency === 'USD') { pick = funded[j]; break; }
+      }
+      if (!pick && funded.length > 0) pick = funded[0];
+      if (!pick) {
+        for (var k = 0; k < infos.length; k++) {
+          if (infos[k] && infos[k].currency === 'USD') { pick = infos[k]; break; }
+        }
       }
       if (!pick) {
-        for (var j = 0; j < infos.length; j++) {
-          if (infos[j] && infos[j].currency === 'CNY') { pick = infos[j]; break; }
+        for (var m = 0; m < infos.length; m++) {
+          if (infos[m] && infos[m].currency === 'CNY') { pick = infos[m]; break; }
         }
       }
       if (!pick) return null;
