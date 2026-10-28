@@ -6,8 +6,10 @@ import { join } from 'node:path';
 /** Pages the widget is allowed to open: provider key pages only. */
 const ALLOWED_HOSTS = new Set(['platform.deepseek.com', 'openrouter.ai']);
 
-/** Brings the default browser window to the front after the tab has opened.
- *  Windows does not raise the window for a link opened from another app. */
+/** Brings the browser window to the front after the tab has opened.
+ *  Windows does not raise the window for a link opened from another app.
+ *  Default browser first; if it cannot be matched, a single other running
+ *  browser is raised (never a guess when several are open). */
 const FOCUS_SCRIPT = `
 $ErrorActionPreference = 'SilentlyContinue'
 Add-Type -AssemblyName Microsoft.VisualBasic
@@ -16,9 +18,13 @@ $cmd = (Get-ItemProperty "Registry::HKEY_CLASSES_ROOT\\$progId\\shell\\open\\com
 $exe = [regex]::Match($cmd, '"([^"]+)"').Groups[1].Value
 if (-not $exe) { $exe = ($cmd -split ' ')[0] }
 $name = [IO.Path]::GetFileNameWithoutExtension($exe)
-foreach ($p in Get-Process -Name $name) {
-  if ($p.MainWindowHandle -ne 0) { [Microsoft.VisualBasic.Interaction]::AppActivate($p.Id) }
+$known = @('opera', 'chrome', 'msedge', 'firefox', 'brave', 'vivaldi', 'browser', 'chromium', 'yandex')
+$targets = @(Get-Process -Name $name | Where-Object { $_.MainWindowHandle -ne 0 })
+if ($targets.Count -eq 0) {
+  $running = @(Get-Process | Where-Object { $_.MainWindowHandle -ne 0 -and $known -contains $_.ProcessName })
+  if ($running.Count -eq 1) { $targets = $running }
 }
+foreach ($p in $targets) { [Microsoft.VisualBasic.Interaction]::AppActivate($p.Id) }
 `;
 
 export const inject = ['webServer'];
