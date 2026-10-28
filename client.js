@@ -576,7 +576,7 @@ window.__ModuleLoader__.load({
         fontFamily: 'inherit', fontSize: 12, textAlign: 'right', outline: 'none', cursor: 'text',
       },
       result: {
-        marginLeft: 6, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
+        marginLeft: 0, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
         cursor: 'copy', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
       },
       sub: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', textAlign: 'right' },
