@@ -458,7 +458,7 @@ window.__ModuleLoader__.load({
       },
       meta: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       bigRow: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
-      balanceRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap', marginTop: 6 },
+      balanceRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', marginTop: 6 },
       balanceLabel: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       sumBox: {
         display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6, paddingTop: 6,
@@ -488,7 +488,15 @@ window.__ModuleLoader__.load({
         borderRadius: 9, fontSize: 17, lineHeight: '17px', cursor: 'pointer', fontFamily: 'inherit', padding: 0,
         flex: '0 0 auto',
       },
-      amount: { fontSize: 21, fontWeight: 700, lineHeight: '26px' },
+      amount: {
+        fontSize: 21, fontWeight: 700, lineHeight: '26px', whiteSpace: 'nowrap',
+        minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+      },
+      // Status text ("Add API key", "key rejected") is longer than a number.
+      amountText: {
+        fontSize: 14, fontWeight: 600, lineHeight: '20px', whiteSpace: 'nowrap',
+        overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
+      },
       tokens: { fontSize: 13, fontWeight: 600, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       secondary: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       muted: { fontSize: 13, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer' },
@@ -1062,7 +1070,7 @@ window.__ModuleLoader__.load({
           h('span', { key: 'l', style: styles.balanceLabel }, text.balance),
           h('span', {
             key: 'a',
-            style: styles.amount,
+            style: balance.status === 'ready' ? styles.amount : styles.amountText,
             title: balance.status === 'ready' ? text.refresh : text.addKey,
             onClick: function () {
               if (balance.status === 'ready') refresh(provider, apiKey);
