@@ -566,10 +566,10 @@ window.__ModuleLoader__.load({
         display: 'flex', flexDirection: 'column', gap: 1, marginTop: 5, paddingTop: 6,
         borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))',
       },
-      row: { display: 'flex', alignItems: 'center', gap: 6 },
-      code: { width: 56, flex: '0 0 auto', fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      row: { display: 'flex', alignItems: 'center', gap: 5 },
+      code: { width: 46, flex: '0 0 auto', fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       input: {
-        width: 76, boxSizing: 'border-box', padding: '3px 7px', borderRadius: 6,
+        width: 76, boxSizing: 'border-box', padding: '3px 9px', borderRadius: 6,
         border: '0.5px solid var(--dsw-alias-border-l3, rgba(128,128,128,0.4))',
         background: 'var(--dsw-alias-bg-base, transparent)',
         color: 'var(--dsw-alias-label-primary, inherit)',
@@ -579,7 +579,7 @@ window.__ModuleLoader__.load({
         marginLeft: 0, fontSize: 12.5, fontWeight: 600, whiteSpace: 'nowrap',
         cursor: 'copy', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
       },
-      sub: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', paddingLeft: 62 },
+      sub: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', paddingLeft: 51 },
       eq: { fontSize: 12, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       divider: { borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))', margin: '4px 0 2px' },
       rubList: {
