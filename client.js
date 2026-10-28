@@ -184,7 +184,8 @@ window.__ModuleLoader__.load({
       } catch (e) { return value.toFixed(2) + ' ' + code; }
     }
     function fmtTokens(value, lang) {
-      if (value == null || !isFinite(value) || value <= 0) return null;
+      if (value == null || !isFinite(value)) return null;
+      if (value <= 0) return '0';
       var big = lang === 'ru' ? 'млн' : 'M';
       var small = lang === 'ru' ? 'тыс' : 'K';
       var sep = lang === 'ru' ? ',' : '.';
@@ -814,7 +815,11 @@ window.__ModuleLoader__.load({
       var nativeCode = balance.data ? balance.data.currency : null;
       var nativeAmount = balance.data ? balance.data.amount : null;
       var tokens = provider === 'deepseek' && usd != null ? usd / DEEPSEEK_PRICE * 1e6 : null;
-      var tokensText = fmtTokens(tokens, lang);
+      // DeepSeek accounts always show an estimate; "—" means the balance is
+      // known but the rate is not available yet.
+      var tokensText = balance.status === 'ready' && provider === 'deepseek'
+        ? (fmtTokens(tokens, lang) || '—')
+        : null;
 
       var amountText;
       if (balance.status === 'ready') amountText = fmtMoney(shown, currency, lang);
