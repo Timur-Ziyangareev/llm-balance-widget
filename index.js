@@ -13,7 +13,12 @@ const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML,
 /** Central banks fetched server-side: the Fed and the PBOC do not send CORS headers. */
 const BANK_SOURCES = {
   usd: { url: 'https://www.federalreserve.gov/releases/h10/current/', parse: parseFed },
-  cny: { url: 'https://www.chinamoney.com.cn/r/cms/www/chinamoney/data/fx/ccpr.json', parse: parsePboc },
+  cny: {
+    url: 'https://www.chinamoney.com.cn/r/cms/www/chinamoney/data/fx/ccpr.json',
+    parse: (text) => {
+      try { return parsePboc(JSON.parse(text)); } catch (error) { return null; }
+    },
+  },
 };
 
 const BANK_CACHE = new Map();
