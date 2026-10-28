@@ -732,7 +732,10 @@ window.__ModuleLoader__.load({
         var useProvider = providerArg || provider;
         var useKey = keyArg != null ? keyArg : apiKey;
         if (!useKey) { setBalance({ status: 'no-key' }); return; }
-        setBalance({ status: 'loading' });
+        // Keep the last number on screen during the background refresh.
+        setBalance(function (prev) {
+          return prev && prev.status === 'ready' ? prev : { status: 'loading' };
+        });
         fetchBalance(useProvider, useKey).then(function (result) {
           setBalance(result.status === 'ready'
             ? { status: 'ready', data: result.data, at: Date.now() }
