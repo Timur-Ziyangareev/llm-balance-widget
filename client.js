@@ -958,7 +958,8 @@ window.__ModuleLoader__.load({
           h('span', { key: 'l', style: styles.balanceLabel }, text.balance),
           h('span', { key: 'a', style: styles.smallAmount },
             balance.status === 'ready' ? fmtMoney(shown, currency, lang) : '—'),
-          tokensText != null ? h('span', { key: 'k', style: styles.smallTokens }, '≈' + tokensText) : null,
+          tokensText != null ? h('span', { key: 'k', style: styles.smallTokens },
+            '≈ ' + tokensText + ' ' + text.tokens) : null,
           h('span', { key: 'sp', style: { flex: '1 1 auto' } }),
           gearButton(true),
           collapseButton(true),
@@ -1164,15 +1165,20 @@ window.__ModuleLoader__.load({
         widgetStyle.left = pos.left + 'px';
         widgetStyle.top = pos.top + 'px';
       }
-      // Fixed width: switching currency must not resize the widget.
-      widgetStyle.width = '330px';
-      widgetStyle.minWidth = '330px';
-      widgetStyle.maxWidth = '330px';
-      widgetStyle.boxSizing = 'border-box';
+      // Fixed width in the expanded view keeps the currency switch from resizing it.
+      // The compact strip can grow a little to fit "≈ N токенов".
       if (collapsed) {
+        widgetStyle.width = 'auto';
+        widgetStyle.minWidth = '330px';
+        widgetStyle.maxWidth = '400px';
         widgetStyle.justifyContent = 'center';
-        widgetStyle.padding = '10px 18px';
+        widgetStyle.padding = '8px 16px';
+      } else {
+        widgetStyle.width = '330px';
+        widgetStyle.minWidth = '330px';
+        widgetStyle.maxWidth = '330px';
       }
+      widgetStyle.boxSizing = 'border-box';
       widgetStyle.cursor = dragging ? 'grabbing' : 'grab';
       if (!dragging) widgetStyle.transition = 'left 160ms ease, top 160ms ease';
 
