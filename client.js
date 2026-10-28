@@ -471,7 +471,7 @@ window.__ModuleLoader__.load({
       meta: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       bigRow: { display: 'flex', alignItems: 'baseline', gap: 8, flexWrap: 'wrap' },
       balanceRow: { display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'nowrap', marginTop: 6 },
-      balanceLabel: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      balanceLabel: { fontSize: 10.5, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', flex: '0 0 auto' },
       sumBox: {
         display: 'flex', flexDirection: 'column', gap: 3, marginTop: 6, paddingTop: 6,
         borderTop: '0.5px solid var(--dsw-alias-border-l2, rgba(128,128,128,0.25))',
@@ -503,14 +503,18 @@ window.__ModuleLoader__.load({
       },
       amount: {
         fontSize: 21, fontWeight: 700, lineHeight: '26px', whiteSpace: 'nowrap',
-        minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+        flex: '0 0 auto',
       },
       // Status text ("Add API key", "key rejected") is longer than a number.
       amountText: {
         fontSize: 14, fontWeight: 600, lineHeight: '20px', whiteSpace: 'nowrap',
         overflow: 'hidden', textOverflow: 'ellipsis', minWidth: 0,
       },
-      tokens: { fontSize: 13, fontWeight: 600, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      // The amount never shrinks; the token estimate gives way first.
+      tokens: {
+        fontSize: 13, fontWeight: 600, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)',
+        flex: '0 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
+      },
       secondary: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
       muted: { fontSize: 13, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer' },
       panel: {
