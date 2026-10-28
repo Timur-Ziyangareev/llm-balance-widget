@@ -20,7 +20,7 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 ## Install
 
 1. Copy this folder to `<DSH profile>/node_modules/@local/llm-balance-widget`.
-2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.3.0"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
+2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.3.1"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
 3. Restart DeepSeek Harness.
 
 The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
@@ -42,7 +42,7 @@ The key is stored in the app window's `localStorage` under `llm-balance.key.<pro
 
 - OpenRouter is protected by Cloudflare and may answer `403` on some networks; the widget then shows `unavailable`.
 - The token estimate is DeepSeek-only and assumes $0.28 per 1M input tokens (cache miss). Real cost depends on the input/output mix.
-- The RUB rate comes from `cbr-xml-daily.ru` and is refreshed every 6 hours.
+- The RUB rate comes from `cbr-xml-daily.ru` (CBR publishes once a day) and is re-checked hourly; the date next to the balance is the CBR date. A cached payload that is missing converter currencies is discarded instead of reused.
 
 ## Tests
 
@@ -74,7 +74,7 @@ The test loads `client.js` in a sandbox and checks the response parsers against 
 ### Установка
 
 1. Скопируй папку в `<профиль DSH>/node_modules/@local/llm-balance-widget`.
-2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.3.0"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
+2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.3.1"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
 3. Перезапусти DeepSeek Harness.
 
 Профиль на Windows лежит в `%USERPROFILE%\.dsh\profiles\desktop`.
@@ -96,7 +96,7 @@ The test loads `client.js` in a sandbox and checks the response parsers against 
 
 - OpenRouter защищён Cloudflare и на некоторых сетях отвечает `403`; виджет тогда показывает «недоступен».
 - Оценка токенов — только для DeepSeek и по цене $0.28 за 1М входных токенов (cache miss). Реальная стоимость зависит от соотношения входных и выходных токенов.
-- Курс рубля берётся с `cbr-xml-daily.ru` и обновляется раз в 6 часов.
+- Курс рубля берётся с `cbr-xml-daily.ru` (ЦБ публикует раз в день) и перепроверяется раз в час; дата рядом с балансом — это дата курса ЦБ. Кэш, в котором не хватает валют конвертера, отбрасывается, а не используется.
 
 ### Тесты
 

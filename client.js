@@ -14,7 +14,9 @@ window.__ModuleLoader__.load({
 
     var REFRESH_MS = 60000;
     var RETRY_MS = 20000;
-    var RATES_TTL = 6 * 60 * 60 * 1000;
+    // CBR publishes once a day, so an hour is plenty; a cached payload that is
+    // missing converter currencies is ignored regardless of its age.
+    var RATES_TTL = 60 * 60 * 1000;
 
     var K = {
       lang: 'llm-balance.lang',
@@ -22,8 +24,8 @@ window.__ModuleLoader__.load({
       provider: 'llm-balance.provider',
       pos: 'llm-balance.pos',
       collapsed: 'llm-balance.collapsed',
-      rates: 'llm-balance.rates',
-      ratesAt: 'llm-balance.ratesAt',
+      rates: 'llm-balance.rates.v2',
+      ratesAt: 'llm-balance.ratesAt.v2',
       inputs: 'llm-balance.inputs',
       keyPrefix: 'llm-balance.key.'
     };
@@ -64,6 +66,7 @@ window.__ModuleLoader__.load({
         collapse: 'Collapse',
         expand: 'Expand',
         loading: 'loading…',
+        cbr: 'CBR',
         keyPlaceholder: 'paste your key',
         keyFormat: 'That does not look like a key — DeepSeek and OpenRouter keys start with "sk-".',
         copy: 'Click to copy',
@@ -92,6 +95,7 @@ window.__ModuleLoader__.load({
         collapse: 'Свернуть',
         expand: 'Развернуть',
         loading: 'загрузка…',
+        cbr: 'ЦБ',
         keyPlaceholder: 'вставьте ключ',
         keyFormat: 'Это не похоже на ключ — ключи DeepSeek и OpenRouter начинаются с «sk-».',
         copy: 'Нажмите, чтобы скопировать',
@@ -157,6 +161,11 @@ window.__ModuleLoader__.load({
       try {
         return new Date(ts).toLocaleTimeString(locale(lang), { hour: '2-digit', minute: '2-digit' });
       } catch (e) { return ''; }
+    }
+    function fmtDay(iso, lang) {
+      var parts = String(iso || '').slice(0, 10).split('-');
+      if (parts.length !== 3) return '';
+      return lang === 'ru' ? parts[2] + '.' + parts[1] : parts[0] + '-' + parts[1] + '-' + parts[2];
     }
     function fmtNum(value, lang) {
       if (value == null || !isFinite(value)) return '—';
@@ -315,6 +324,16 @@ window.__ModuleLoader__.load({
         storageSet(K.ratesAt, String(Date.now()));
         return parsed;
       } catch (e) { return null; }
+    }
+
+    /** A cached payload is only usable when every converter currency is present. */
+    function hasRates(value) {
+      if (!value) return false;
+      var codes = ['usd', 'eur', 'cny', 'kzt', 'uah', 'byn'];
+      for (var i = 0; i < codes.length; i++) {
+        if (typeof value[codes[i]] !== 'number' || !isFinite(value[codes[i]])) return false;
+      }
+      return true;
     }
 
     var HOME_MARGIN = 12;
@@ -521,12 +540,25 @@ window.__ModuleLoader__.load({
       React.useEffect(function () { storageSet(K.inputs, JSON.stringify(inputs)); }, [inputs]);
 
       React.useEffect(function () {
+        // Drop the pre-1.3 cache shape: it only carried USD and CNY.
+        storageRemove('llm-balance.rates');
+        storageRemove('llm-balance.ratesAt');
         var cached = readJson(K.rates);
-        if (cached && cached.usd) setRates(cached);
         var at = Number(storageGet(K.ratesAt));
-        if (!cached || !isFinite(at) || Date.now() - at > RATES_TTL) {
-          fetchRates().then(function (next) { if (next) setRates(next); });
-        }
+        var complete = hasRates(cached);
+        var fresh = complete && isFinite(at) && at > 0 && Date.now() - at < RATES_TTL;
+        if (complete) setRates(cached);
+        if (!fresh) fetchRates().then(function (next) { if (next) setRates(next); });
+      }, []);
+
+      React.useEffect(function () {
+        var timer = setInterval(function () {
+          var at = Number(storageGet(K.ratesAt));
+          if (!isFinite(at) || at <= 0 || Date.now() - at > RATES_TTL) {
+            fetchRates().then(function (next) { if (next) setRates(next); });
+          }
+        }, 10 * 60 * 1000);
+        return function () { clearInterval(timer); };
       }, []);
 
       function refresh(providerArg, keyArg) {
@@ -691,6 +723,7 @@ window.__ModuleLoader__.load({
 
       var metaText = providerMeta.label;
       if (balance.status === 'ready' && balance.at) metaText += ' · ' + text.updated + ' ' + fmtClock(balance.at, lang);
+      if (rates && rates.date) metaText += ' · ' + text.cbr + ' ' + fmtDay(rates.date, lang);
 
       var children = [];
       children.push(h('div', { key: 'hdr', style: styles.headerRow }, [
@@ -937,6 +970,7 @@ window.__ModuleLoader__.load({
         parseDeepSeek: parseDeepSeek,
         parseOpenRouter: parseOpenRouter,
         toUsd: toUsd,
+        hasRates: hasRates,
         fmtTokens: fmtTokens
       },
       apply: function (ctx) {

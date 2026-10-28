@@ -14,23 +14,34 @@ assert(captured, 'client.js did not call __ModuleLoader__.load');
 
 const mod = captured.factory((name) => (name === 'react' ? { createElement() {} } : null));
 assert(mod._test, 'test hooks missing');
-const { parseRates, parseDeepSeek, parseOpenRouter, toUsd, fmtTokens } = mod._test;
+const { parseRates, parseDeepSeek, parseOpenRouter, toUsd, hasRates, fmtTokens } = mod._test;
 
-// CBR payload with Nominal 10 for CNY.
+// CBR payload: Nominal is 10 for CNY and 100 for KZT.
 const rates = parseRates({
   Date: '2026-10-28T11:30:00+03:00',
   Valute: {
     USD: { Nominal: 1, Value: 92.5, Previous: 92.0 },
     EUR: { Nominal: 1, Value: 100.9, Previous: 101.9 },
     CNY: { Nominal: 10, Value: 129.8, Previous: 129.3 },
+    KZT: { Nominal: 100, Value: 18.4, Previous: 18.3 },
+    UAH: { Nominal: 10, Value: 22.1, Previous: 22.4 },
+    BYN: { Nominal: 1, Value: 27.3, Previous: 27.2 },
   },
 });
 assert.strictEqual(rates.usd, 92.5);
 assert.strictEqual(rates.cny, 12.98);
 assert.strictEqual(rates.eur, 100.9);
+assert.strictEqual(rates.kzt.toFixed(6), '0.184000');
+assert.strictEqual(rates.uah.toFixed(6), '2.210000');
+assert.strictEqual(rates.byn, 27.3);
 assert.strictEqual(rates.change.usd.toFixed(6), (0.5 / 92.0).toFixed(6));
 assert.strictEqual(rates.change.eur.toFixed(6), (-1.0 / 101.9).toFixed(6));
 assert.strictEqual(rates.date, '2026-10-28T11:30:00+03:00');
+
+// A cache from an older widget version must not be reused.
+assert.strictEqual(hasRates(rates), true);
+assert.strictEqual(hasRates({ usd: 92.5, cny: 12.98, date: rates.date }), false);
+assert.strictEqual(hasRates(null), false);
 
 // DeepSeek: USD entry wins over CNY.
 const ds = parseDeepSeek({
