@@ -502,10 +502,8 @@ window.__ModuleLoader__.load({
       }
 
       var usd = null;
-      var nativeLabel = null;
       if (balance.status === 'ready' && balance.data) {
         usd = toUsd(balance.data, rates);
-        nativeLabel = balance.data.currency;
       }
       var rub = usd != null && rates && rates.usd ? usd * rates.usd : null;
       var shown = currency === 'RUB' ? rub : usd;
