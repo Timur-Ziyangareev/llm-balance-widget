@@ -9,6 +9,7 @@ window.__ModuleLoader__.load({
     var OPENROUTER_URL = 'https://openrouter.ai/api/v1/credits';
     var RATES_URL = 'https://www.cbr-xml-daily.ru/daily_json.js';
     var BANK_URL = '/llm-balance/bank';
+    var USAGE_URL = '/llm-balance/usage';
 
     // USD per 1M input tokens, cache miss (DeepSeek V3.2 pricing).
     var DEEPSEEK_PRICE = 0.28;
@@ -78,7 +79,11 @@ window.__ModuleLoader__.load({
         getKey: 'get a key',
         keySaved: 'key saved',
         refresh: 'refresh',
-        native: 'account currency'
+        native: 'account currency',
+        usedDay: 'today',
+        usedMonth: 'month',
+        usedAll: 'all time',
+        usageHint: 'Tokens spent on this account, according to the DeepSeek platform'
       },
       ru: {
         balance: 'Баланс',
@@ -111,7 +116,11 @@ window.__ModuleLoader__.load({
         getKey: 'получить ключ',
         keySaved: 'ключ сохранён',
         refresh: 'обновить',
-        native: 'валюта счёта'
+        native: 'валюта счёта',
+        usedDay: 'сегодня',
+        usedMonth: 'месяц',
+        usedAll: 'всего',
+        usageHint: 'Израсходовано токенов на этом аккаунте, по данным платформы DeepSeek'
       },
       zh: {
         balance: '余额',
@@ -144,7 +153,11 @@ window.__ModuleLoader__.load({
         getKey: '获取密钥',
         keySaved: '密钥已保存',
         refresh: '刷新',
-        native: '账户货币'
+        native: '账户货币',
+        usedDay: '今日',
+        usedMonth: '本月',
+        usedAll: '总计',
+        usageHint: '该账户已消耗的 token，数据来自 DeepSeek 平台'
       }
     };
 
@@ -516,6 +529,14 @@ window.__ModuleLoader__.load({
         flex: '0 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap',
       },
       secondary: { fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)' },
+      metaRow: {
+        display: 'flex', alignItems: 'baseline', justifyContent: 'space-between', gap: '2px 10px',
+        flexWrap: 'wrap', fontSize: 11, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)',
+      },
+      metaUsage: {
+        flex: '0 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
+        whiteSpace: 'nowrap', textAlign: 'right', marginLeft: 'auto',
+      },
       muted: { fontSize: 13, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer' },
       panel: {
         display: 'flex', flexDirection: 'column', gap: 7,
@@ -638,6 +659,9 @@ window.__ModuleLoader__.load({
 
       var copiedRef = React.useState(null);
       var copied = copiedRef[0], setCopied = copiedRef[1];
+
+      var usageRef = React.useState(null);
+      var usage = usageRef[0], setUsage = usageRef[1];
 
       var sumListRef = React.useRef(null);
       /** Shrink the conversion line until it fits, but never below 9px. */
@@ -763,6 +787,21 @@ window.__ModuleLoader__.load({
       React.useEffect(function () {
         fitSumList();
       }, [sums, currency, rates, lang, collapsed, settingsOpen]);
+
+      // Token usage needs the signed-in platform session, so it comes from the host.
+      React.useEffect(function () {
+        var alive = true;
+        function load() {
+          if (provider !== 'deepseek') { if (alive) setUsage(null); return; }
+          fetch(USAGE_URL, { cache: 'no-store' })
+            .then(function (res) { return res.json(); })
+            .then(function (body) { if (alive) setUsage(body && body.ok ? body : null); })
+            .catch(function () { if (alive) setUsage(null); });
+        }
+        load();
+        var timer = setInterval(load, 5 * 60 * 1000);
+        return function () { alive = false; clearInterval(timer); };
+      }, [provider]);
 
       React.useEffect(function () {
         // Drop the pre-1.3 cache shape: it only carried USD and CNY.
@@ -1154,9 +1193,19 @@ window.__ModuleLoader__.load({
           gearButton(false),
           collapseButton(false),
         ]));
-        if (balance.status === 'ready' && nativeCode && nativeAmount != null && nativeCode !== currency) {
-          children.push(h('div', { key: 'native', style: styles.secondary },
-            text.native + ': ' + fmtMoney(nativeAmount, nativeCode, lang)));
+        var nativeText = balance.status === 'ready' && nativeCode && nativeAmount != null && nativeCode !== currency
+          ? text.native + ': ' + fmtMoney(nativeAmount, nativeCode, lang)
+          : null;
+        var usageText = usage && usage.ok && usage.all > 0
+          ? text.usedDay + ' ' + fmtTokens(usage.day, lang) + ' · ' +
+            text.usedMonth + ' ' + fmtTokens(usage.month, lang) + ' · ' +
+            text.usedAll + ' ' + fmtTokens(usage.all, lang)
+          : null;
+        if (nativeText || usageText) {
+          children.push(h('div', { key: 'native', style: styles.metaRow }, [
+            nativeText ? h('span', { key: 'n' }, nativeText) : null,
+            usageText ? h('span', { key: 'u', style: styles.metaUsage, title: text.usageHint }, usageText) : null,
+          ]));
         }
       }
 

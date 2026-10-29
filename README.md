@@ -9,6 +9,7 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 - **Bring your own key.** Stored locally in the app window, sent only to the provider.
 - **DeepSeek** — balance from `GET /user/balance` (USD or CNY wallets), plus a `≈ N tokens` estimate.
 - **OpenRouter** — remaining credits from `GET /api/v1/credits`.
+- **Token usage** — today, this month and all time, read from the signed-in DeepSeek platform session (the public API does not expose usage).
 - **Converter** — any amount in the selected currency, shown in all the others; click a value to copy it.
 - **Rates from local central banks** — RUB uses the Bank of Russia, USD the Federal Reserve (H.10), CNY the PBOC fixing; where a bank does not quote a currency, the CBR cross-rate is used.
 - **Display currency:** USD by default, RUB or CNY in one click — the balance and the converter both follow it.
@@ -18,7 +19,7 @@ A small draggable widget for DeepSeek Harness that shows **your own** LLM API ba
 ## Install
 
 1. Copy this folder to `<DSH profile>/node_modules/@local/llm-balance-widget`.
-2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.9.4"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
+2. In `<DSH profile>/package.json` add `"@local/llm-balance-widget": "1.9.6"` to `dependencies` and `"@local/llm-balance-widget"` to `dsh.profile.bundles`.
 3. Restart DeepSeek Harness.
 
 The desktop profile lives in `%USERPROFILE%\.dsh\profiles\desktop` on Windows.
@@ -58,10 +59,11 @@ Balance ₽220,90  ≈ 9.8 M tokens      ⚙  ▁▃▅▇↗
 
 ## Privacy
 
-The key lives in the app window's `localStorage` under `llm-balance.key.<provider>` and is sent only to `api.deepseek.com` or `openrouter.ai`. There is no proxy, no telemetry and no analytics. The only server routes are `/llm-balance/open` (opens the provider page) and `/llm-balance/bank` (fetches Fed and PBOC rates, which do not allow browser requests); neither receives the key.
+The key lives in the app window's `localStorage` under `llm-balance.key.<provider>` and is sent only to `api.deepseek.com` or `openrouter.ai`. There is no proxy, no telemetry and no analytics. The server routes are `/llm-balance/open` (opens the provider page), `/llm-balance/bank` (fetches Fed and PBOC rates, which do not allow browser requests) and `/llm-balance/usage` (reads token usage with the DSH platform session, never with your key); the key reaches none of them.
 
 ## Limitations
 
+- Token usage is not part of the public API: it is read from the platform session that DSH already holds, so it works only while DeepSeek is signed in, and it disappears quietly if that private endpoint changes.
 - OpenRouter is protected by Cloudflare and may answer `403` on some networks; the widget then shows `unavailable`.
 - The Fed publishes H.10 weekly, the PBOC fixing daily at 09:15 Beijing time; native-bank data older than 7 days is ignored in favour of the CBR cross-rate.
 - The RUB rate is re-checked hourly; the CBR publishes once a day.
@@ -84,6 +86,7 @@ node test/banks.test.mjs
 - **Свой ключ.** Хранится локально в окне приложения, уходит только провайдеру.
 - **DeepSeek** — баланс из `GET /user/balance` (кошельки USD и CNY) и оценка `≈ N токенов`.
 - **OpenRouter** — остаток кредитов из `GET /api/v1/credits`.
+- **Расход токенов** — за сегодня, месяц и всё время; берётся из сессии платформы DeepSeek (в публичном API этих данных нет).
 - **Конвертер** — любая сумма в выбранной валюте показывается во всех остальных; клик по значению копирует его.
 - **Курсы от местных ЦБ** — рубли от Банка России, доллары от ФРС (H.10), юани от НБК (фиксинг); где ЦБ валюту не котирует, берётся кросс-курс ЦБ РФ.
 - **Валюта отображения:** по умолчанию доллары, одним кликом — рубли или юани; за ней следуют и баланс, и конвертер.
@@ -93,7 +96,7 @@ node test/banks.test.mjs
 ### Установка
 
 1. Скопируй папку в `<профиль DSH>/node_modules/@local/llm-balance-widget`.
-2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.9.4"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
+2. В `<профиль DSH>/package.json` добавь `"@local/llm-balance-widget": "1.9.6"` в `dependencies` и `"@local/llm-balance-widget"` в `dsh.profile.bundles`.
 3. Перезапусти DeepSeek Harness.
 
 Профиль на Windows: `%USERPROFILE%\.dsh\profiles\desktop`.
@@ -151,6 +154,7 @@ node test/banks.test.mjs
 - **使用自己的密钥。** 只保存在应用窗口中，只发送给服务商。
 - **DeepSeek** — 通过 `GET /user/balance` 显示余额（USD 与 CNY 钱包），并估算 `≈ N 个 token`。
 - **OpenRouter** — 通过 `GET /api/v1/credits` 显示剩余额度。
+- **token 用量** — 今日、本月与总计，取自已登录的 DeepSeek 平台会话（公开 API 不提供用量数据）。
 - **换算器** — 输入所选货币的金额，立即显示其余所有货币；点击数值即可复制。
 - **使用各国央行汇率** — 卢布用俄罗斯央行，美元用美联储（H.10），人民币用中国央行中间价；央行不报价的货币使用俄罗斯央行的交叉汇率。
 - **显示货币：** 默认美元，一键切换卢布或人民币；余额和换算器都会跟着切换。
@@ -160,7 +164,7 @@ node test/banks.test.mjs
 ### 安装
 
 1. 把本文件夹复制到 `<DSH 配置目录>/node_modules/@local/llm-balance-widget`。
-2. 在 `<DSH 配置目录>/package.json` 的 `dependencies` 中加入 `"@local/llm-balance-widget": "1.9.4"`，并在 `dsh.profile.bundles` 中加入 `"@local/llm-balance-widget"`。
+2. 在 `<DSH 配置目录>/package.json` 的 `dependencies` 中加入 `"@local/llm-balance-widget": "1.9.6"`，并在 `dsh.profile.bundles` 中加入 `"@local/llm-balance-widget"`。
 3. 重启 DeepSeek Harness。
 
 Windows 上的配置目录：`%USERPROFILE%\.dsh\profiles\desktop`。

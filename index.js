@@ -24,6 +24,13 @@ const BANK_SOURCES = {
 const BANK_CACHE = new Map();
 const BANK_TTL = 30 * 60 * 1000;
 
+/** Token usage lives behind the signed-in platform session, not the API key. */
+const PLATFORM = 'https://platform.deepseek.com';
+const PLATFORM_RECORD = 'deepseek-account-platform/default';
+const USAGE_CACHE = new Map();
+const USAGE_TTL = 15 * 60 * 1000;
+const USAGE_MONTHS_BACK = 24;
+
 /** Brings the browser window to the front after the tab has opened.
  *  Windows does not raise the window for a link opened from another app.
  *  Default browser first; if it cannot be matched, a single other running
@@ -45,7 +52,7 @@ if ($targets.Count -eq 0) {
 foreach ($p in $targets) { [Microsoft.VisualBasic.Interaction]::AppActivate($p.Id) }
 `;
 
-export const inject = ['webServer'];
+export const inject = ['webServer', 'credentials'];
 
 function send(res, status, body) {
   res.writeHead(status, {
@@ -96,9 +103,10 @@ async function openInBrowser(url) {
 
 /** Fetch text with a browser-like UA; Electron's net stack trusts the OS store,
  *  which matters behind a TLS-inspecting antivirus. */
-async function fetchText(url) {
+async function fetchText(url, extraHeaders) {
+  const headers = Object.assign({ 'user-agent': UA, accept: 'text/html,application/json;q=0.9,*/*;q=0.8' }, extraHeaders || {});
   try {
-    const res = await fetch(url, { headers: { 'user-agent': UA, accept: 'text/html,application/json;q=0.9,*/*;q=0.8' } });
+    const res = await fetch(url, { headers });
     if (!res.ok) throw new Error('http ' + res.status);
     return await res.text();
   } catch (error) {
@@ -106,13 +114,70 @@ async function fetchText(url) {
       const electron = await import('electron');
       const net = electron && electron.net;
       if (net && typeof net.fetch === 'function') {
-        const res = await net.fetch(url, { headers: { 'user-agent': UA } });
+        const res = await net.fetch(url, { headers });
         if (!res.ok) throw new Error('http ' + res.status);
         return await res.text();
       }
     } catch (inner) { /* keep the original error */ }
     throw error;
   }
+}
+
+/** Usage tables count every token type except the request counter. */
+function sumTokens(models) {
+  let total = 0;
+  for (const model of models || []) {
+    for (const item of (model && model.usage) || []) {
+      if (!item || item.type === 'REQUEST') continue;
+      const value = Number(item.amount);
+      if (Number.isFinite(value)) total += value;
+    }
+  }
+  return total;
+}
+
+function dateKey(date) {
+  const pad = (value) => String(value).padStart(2, '0');
+  return date.getFullYear() + '-' + pad(date.getMonth() + 1) + '-' + pad(date.getDate());
+}
+
+async function fetchUsageMonth(token, year, month) {
+  const url = PLATFORM + '/api/v0/usage/amount?month=' + month + '&year=' + year;
+  const json = JSON.parse(await fetchText(url, { 'x-dsh-auth-token': token, accept: 'application/json' }));
+  const data = json && json.data;
+  if (!data || data.biz_code !== 0) return null;
+  return data.biz_data || null;
+}
+
+/** Day, month and lifetime totals. Older months are skipped once two empty
+ *  months in a row prove there is nothing before them. */
+async function collectUsage(token) {
+  const now = new Date();
+  const today = dateKey(now);
+  let day = 0;
+  let month = 0;
+  let all = 0;
+  let emptyStreak = 0;
+  for (let back = 0; back < USAGE_MONTHS_BACK; back += 1) {
+    const cursor = new Date(now.getFullYear(), now.getMonth() - back, 1);
+    const biz = await fetchUsageMonth(token, cursor.getFullYear(), cursor.getMonth() + 1);
+    if (!biz) break;
+    const monthTotal = sumTokens(biz.total);
+    all += monthTotal;
+    if (back === 0) {
+      month = monthTotal;
+      for (const entry of biz.days || []) {
+        if (entry && entry.date === today) day = sumTokens(entry.data);
+      }
+    }
+    if (monthTotal === 0) {
+      emptyStreak += 1;
+      if (back > 0 && emptyStreak >= 2) break;
+    } else {
+      emptyStreak = 0;
+    }
+  }
+  return { ok: true, day, month, all, date: today };
 }
 
 function focusScriptPath() {
@@ -182,4 +247,24 @@ export function apply(ctx) {
       }
     },
   }), 'llm-balance: bank');
+
+  ctx.effect(() => ctx.webServer.register({
+    kind: 'exact',
+    path: '/llm-balance/usage',
+    handler: async (req, res) => {
+      const cached = USAGE_CACHE.get('usage');
+      if (cached && Date.now() - cached.at < USAGE_TTL) { send(res, 200, cached.body); return; }
+
+      try {
+        const record = await ctx.credentials.readRecord(PLATFORM_RECORD);
+        const token = record && record.kind === 'grant' && record.payload && record.payload.token;
+        if (!token) { send(res, 200, { ok: false, reason: 'no-session' }); return; }
+        const body = await collectUsage(token);
+        USAGE_CACHE.set('usage', { at: Date.now(), body });
+        send(res, 200, body);
+      } catch (error) {
+        send(res, 200, { ok: false, reason: String((error && error.message) || error) });
+      }
+    },
+  }), 'llm-balance: usage');
 }
