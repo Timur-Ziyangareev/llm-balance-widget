@@ -535,7 +535,7 @@ window.__ModuleLoader__.load({
       },
       metaUsage: {
         flex: '0 1 auto', minWidth: 0, overflow: 'hidden', textOverflow: 'ellipsis',
-        whiteSpace: 'nowrap', textAlign: 'right', marginLeft: 'auto',
+        whiteSpace: 'nowrap', textAlign: 'left',
       },
       muted: { fontSize: 13, color: 'var(--dsw-alias-label-tertiary, #aaaaaa)', cursor: 'pointer' },
       panel: {
