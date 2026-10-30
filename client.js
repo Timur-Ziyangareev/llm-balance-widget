@@ -65,7 +65,7 @@ window.__ModuleLoader__.load({
         empty: 'no balance data',
         updated: 'updated',
         tokens: 'tokens',
-        tokensHint: 'estimate at $' + DEEPSEEK_PRICE + ' / 1M input tokens',
+        tokensHint: 'estimate from the price this account actually pays per token (falls back to $' + DEEPSEEK_PRICE + ' / 1M)',
         collapse: 'Collapse',
         expand: 'Expand',
         loading: 'loading…',
@@ -102,7 +102,7 @@ window.__ModuleLoader__.load({
         empty: 'нет данных о балансе',
         updated: 'обновлено',
         tokens: 'токенов',
-        tokensHint: 'оценка при $' + DEEPSEEK_PRICE + ' / 1М входных токенов',
+        tokensHint: 'оценка по фактической цене токенов на этом аккаунте (запасной вариант — $' + DEEPSEEK_PRICE + ' / 1М)',
         collapse: 'Свернуть',
         expand: 'Развернуть',
         loading: 'загрузка…',
@@ -139,7 +139,7 @@ window.__ModuleLoader__.load({
         empty: '暂无余额数据',
         updated: '更新于',
         tokens: 'tokens',
-        tokensHint: '按每百万输入 tokens $' + DEEPSEEK_PRICE + ' 估算',
+        tokensHint: '按此账户实际的 token 均价估算（无法获取时退回 $' + DEEPSEEK_PRICE + ' / 1M）',
         collapse: '收起',
         expand: '展开',
         loading: '加载中…',
@@ -1031,7 +1031,16 @@ window.__ModuleLoader__.load({
       }
       var nativeCode = balance.data ? balance.data.currency : null;
       var nativeAmount = balance.data ? balance.data.amount : null;
-      var tokens = provider === 'deepseek' && usd != null ? usd / DEEPSEEK_PRICE * 1e6 : null;
+      // Blend the price from what this account actually spent: cache hits cost a
+      // tenth of fresh input, so a single list price overshoots badly.
+      var livePrice = null;
+      if (usage && usage.ok && usage.all > 0 && usage.costAll > 0) {
+        var costUsd = toUsd({ currency: usage.costCurrency || 'CNY', amount: usage.costAll }, rates);
+        if (costUsd != null && costUsd > 0) livePrice = costUsd / usage.all;
+      }
+      var tokens = provider === 'deepseek' && usd != null
+        ? (livePrice ? usd / livePrice : usd / DEEPSEEK_PRICE * 1e6)
+        : null;
       // DeepSeek accounts always show an estimate; "—" means the balance is
       // known but the rate is not available yet.
       var tokensText = balance.status === 'ready' && provider === 'deepseek'

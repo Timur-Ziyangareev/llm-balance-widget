@@ -149,6 +149,24 @@ async function fetchUsageMonth(token, year, month) {
   return data.biz_data || null;
 }
 
+/** Money spent in a month, in the currency the platform bills it in. */
+async function fetchUsageCost(token, year, month) {
+  const url = PLATFORM + '/api/v0/usage/cost?month=' + month + '&year=' + year;
+  const json = JSON.parse(await fetchText(url, { 'x-dsh-auth-token': token, accept: 'application/json' }));
+  const data = json && json.data;
+  if (!data || data.biz_code !== 0) return null;
+  const blocks = Array.isArray(data.biz_data) ? data.biz_data : [];
+  let amount = 0;
+  let currency = 'CNY';
+  for (const block of blocks) {
+    const total = sumTokens(block && block.total);
+    if (!total) continue;
+    if (block.currency) currency = block.currency;
+    amount += total;
+  }
+  return amount > 0 ? { amount, currency } : null;
+}
+
 /** Day, month and lifetime totals. Older months are skipped once two empty
  *  months in a row prove there is nothing before them. */
 async function collectUsage(token) {
@@ -158,12 +176,23 @@ async function collectUsage(token) {
   let month = 0;
   let all = 0;
   let emptyStreak = 0;
+  let costMonth = 0;
+  let costAll = 0;
+  let costCurrency = 'CNY';
   for (let back = 0; back < USAGE_MONTHS_BACK; back += 1) {
     const cursor = new Date(now.getFullYear(), now.getMonth() - back, 1);
     const biz = await fetchUsageMonth(token, cursor.getFullYear(), cursor.getMonth() + 1);
     if (!biz) break;
     const monthTotal = sumTokens(biz.total);
     all += monthTotal;
+    if (monthTotal > 0) {
+      const cost = await fetchUsageCost(token, cursor.getFullYear(), cursor.getMonth() + 1);
+      if (cost) {
+        costAll += cost.amount;
+        costCurrency = cost.currency;
+        if (back === 0) costMonth = cost.amount;
+      }
+    }
     if (back === 0) {
       month = monthTotal;
       for (const entry of biz.days || []) {
@@ -177,7 +206,7 @@ async function collectUsage(token) {
       emptyStreak = 0;
     }
   }
-  return { ok: true, day, month, all, date: today };
+  return { ok: true, day, month, all, costMonth, costAll, costCurrency, date: today };
 }
 
 function focusScriptPath() {
