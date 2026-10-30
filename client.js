@@ -419,6 +419,27 @@ window.__ModuleLoader__.load({
       } catch (e) { return null; }
     }
 
+    /** The balance in roubles, or null when the cached rates do not answer it. */
+    function rubAmount(data, rates) {
+      if (!data || data.amount == null || !isFinite(data.amount)) return null;
+      var perUnit = data.currency === 'RUB' ? 1 : rubPerTarget(data.currency, rates);
+      if (perUnit == null) return null;
+      return data.amount * perUnit;
+    }
+
+    /** Publish the last known balance for other local plugins (desktop-notify). */
+    function publishSnapshot(data) {
+      try {
+        var rub = rubAmount(data, readJson(K.rates));
+        storageSet('llm-balance.snapshot', JSON.stringify({
+          currency: data.currency,
+          amount: data.amount,
+          rub: rub,
+          at: Date.now()
+        }));
+      } catch (e) { /* the consumer simply sees no snapshot */ }
+    }
+
     /** Decorative trend icon: bars with an arrow running along them. */
     function trendIcon(up, label, colorOverride) {
       var color = colorOverride || (up ? '#2e9e5b' : '#d9534f');
@@ -855,6 +876,7 @@ window.__ModuleLoader__.load({
           setBalance(result.status === 'ready'
             ? { status: 'ready', data: result.data, at: Date.now() }
             : result);
+          if (result.status === 'ready') publishSnapshot(result.data);
         });
       }
 
@@ -890,6 +912,7 @@ window.__ModuleLoader__.load({
 
       function clearKey() {
         storageRemove(K.keyPrefix + provider);
+        storageRemove('llm-balance.snapshot');
         setApiKey('');
         setDraftKey('');
         setBalance({ status: 'no-key' });
@@ -1364,7 +1387,9 @@ window.__ModuleLoader__.load({
         hasRates: hasRates,
         factorTo: factorTo,
         fromUsd: fromUsd,
-        fmtTokens: fmtTokens
+        fmtTokens: fmtTokens,
+        rubAmount: rubAmount,
+        publishSnapshot: publishSnapshot
       },
       apply: function (ctx) {
         try {

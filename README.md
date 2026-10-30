@@ -61,6 +61,17 @@ Balance ₽220,90  ≈ 9.8 M tokens      ⚙  ▁▃▅▇↗
 
 The key lives in the app window's `localStorage` under `llm-balance.key.<provider>` and is sent only to `api.deepseek.com` or `openrouter.ai`. There is no proxy, no telemetry and no analytics. The server routes are `/llm-balance/open` (opens the provider page), `/llm-balance/bank` (fetches Fed and PBOC rates, which do not allow browser requests) and `/llm-balance/usage` (reads token usage with the DSH platform session, never with your key); the key reaches none of them.
 
+## For other plugins
+
+After every successful refresh the widget publishes the last known balance for local consumers — `desktop-notify` reads it to warn about a low balance:
+
+```js
+// localStorage
+llm-balance.snapshot → { currency: 'USD', amount: 1.42, rub: 131.35, at: 1793362943000 }
+```
+
+`rub` is `null` when the cached CBR rates cannot convert the currency, and the record is removed when the key is cleared. Nothing else is exposed: no key, no provider payload.
+
 ## Limitations
 
 - Token usage is not part of the public API: it is read from the platform session that DSH already holds, so it works only while DeepSeek is signed in, and it disappears quietly if that private endpoint changes.

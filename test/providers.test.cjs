@@ -4,8 +4,14 @@ const vm = require('vm');
 const assert = require('assert');
 
 let captured = null;
+const store = new Map();
+const storage = {
+  getItem(name) { return store.has(name) ? store.get(name) : null; },
+  setItem(name, value) { store.set(name, String(value)); },
+  removeItem(name) { store.delete(name); },
+};
 const sandbox = {
-  window: { __ModuleLoader__: { load(opts) { captured = opts; } } },
+  window: { __ModuleLoader__: { load(opts) { captured = opts; } }, localStorage: storage },
   console,
   fetch: () => Promise.reject(new Error('network disabled in tests')),
 };
@@ -104,5 +110,26 @@ assert.strictEqual(fmtTokens(44000000, 'en'), '44 M');
 assert.strictEqual(fmtTokens(44000000, 'ru'), '44 млн');
 assert.strictEqual(fmtTokens(812000, 'en'), '812 K');
 assert.strictEqual(fmtTokens(500, 'en'), '500');
+
+// A snapshot for the notifier: the balance in roubles from the cached rates.
+const { rubAmount, publishSnapshot } = mod._test;
+assert.strictEqual(rubAmount({ currency: 'USD', amount: 2 }, rates), 185);
+assert.strictEqual(rubAmount({ currency: 'CNY', amount: 10 }, rates), 129.8);
+assert.strictEqual(rubAmount({ currency: 'RUB', amount: 300 }, rates), 300);
+assert.strictEqual(rubAmount({ currency: 'USD', amount: 2 }, null), null);
+assert.strictEqual(rubAmount({ currency: 'USD', amount: null }, rates), null);
+
+store.set('llm-balance.rates.v2', JSON.stringify(rates));
+publishSnapshot({ currency: 'USD', amount: 1.5 });
+const snapshot = JSON.parse(store.get('llm-balance.snapshot'));
+assert.strictEqual(snapshot.currency, 'USD');
+assert.strictEqual(snapshot.amount, 1.5);
+assert.strictEqual(snapshot.rub.toFixed(6), (1.5 * 92.5).toFixed(6));
+assert.ok(snapshot.at > 0, 'the snapshot carries a timestamp');
+
+// Without rates the snapshot still lands, but without a rouble figure.
+store.delete('llm-balance.rates.v2');
+publishSnapshot({ currency: 'USD', amount: 1 });
+assert.strictEqual(JSON.parse(store.get('llm-balance.snapshot')).rub, null);
 
 console.log('providers ok');
